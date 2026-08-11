@@ -74,6 +74,39 @@ export async function loginWithEmail(
   return data;
 }
 
+export type RegisterPayload = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};
+
+export async function registerWithEmail(
+  payload: RegisterPayload,
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/register`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as AuthResponse &
+    ApiErrorBody;
+
+  if (!res.ok) {
+    const fieldError = data.errors
+      ? Object.values(data.errors).flat()[0]
+      : undefined;
+    throw new Error(fieldError || data.message || "Registration failed.");
+  }
+
+  return data;
+}
+
 export function continueWithGoogle() {
   window.location.href = `${API_URL}/api/auth/google`;
 }
