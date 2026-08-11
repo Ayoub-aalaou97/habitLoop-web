@@ -3,6 +3,23 @@ export const API_URL =
 
 const TOKEN_KEY = "habitloop_token";
 
+export type AuthUser = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+};
+
+export type AuthResponse = {
+  user: AuthUser;
+  token: string;
+};
+
+export type ApiErrorBody = {
+  message?: string;
+  errors?: Record<string, string[]>;
+};
+
 export function saveToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token);
 }
@@ -16,7 +33,7 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function fetchCurrentUser(token: string) {
+export async function fetchCurrentUser(token: string): Promise<AuthUser> {
   const res = await fetch(`${API_URL}/api/user`, {
     headers: {
       Accept: "application/json",
@@ -29,4 +46,34 @@ export async function fetchCurrentUser(token: string) {
   }
 
   return res.json();
+}
+
+export async function loginWithEmail(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_URL}/api/login`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as AuthResponse &
+    ApiErrorBody;
+
+  if (!res.ok) {
+    const fieldError = data.errors
+      ? Object.values(data.errors).flat()[0]
+      : undefined;
+    throw new Error(fieldError || data.message || "Login failed.");
+  }
+
+  return data;
+}
+
+export function continueWithGoogle() {
+  window.location.href = `${API_URL}/api/auth/google`;
 }

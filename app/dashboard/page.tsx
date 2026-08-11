@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_URL, clearToken, fetchCurrentUser, getToken } from "@/lib/auth";
-
-type User = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-};
+import {
+  API_URL,
+  AuthUser,
+  clearToken,
+  fetchCurrentUser,
+  getToken,
+} from "@/lib/auth";
+import { BrandMark, BrandWordmark } from "@/components/BrandMark";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,9 +51,9 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-        <p className="text-red-600">{error}</p>
-        <a href="/login" className="underline">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 bg-bg p-8">
+        <p className="text-danger">{error}</p>
+        <a href="/login" className="text-brand-soft underline">
           Back to login
         </a>
       </main>
@@ -62,23 +62,26 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <p>Loading…</p>
+      <main className="flex flex-1 items-center justify-center bg-bg p-8">
+        <p className="text-text-muted">Loading…</p>
       </main>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-      <h1 className="text-2xl font-semibold">
+    <main className="flex flex-1 flex-col items-center justify-center gap-5 bg-bg p-8">
+      <div className="flex items-center gap-3">
+        <BrandMark size={32} />
+        <BrandWordmark className="text-base" />
+      </div>
+      <h1 className="text-2xl font-extrabold tracking-[-0.02em]">
         Welcome, {user.first_name} {user.last_name}
       </h1>
-      <p className="text-zinc-600 dark:text-zinc-400">{user.email}</p>
-
+      <p className="text-text-muted">{user.email}</p>
       <button
         type="button"
         onClick={logout}
-        className="rounded border border-black/20 px-4 py-2 hover:bg-black/5 dark:border-white/30 dark:hover:bg-white/10"
+        className="rounded-[13px] border border-white/[0.08] bg-bg-elevated px-4 py-2.5 text-sm font-semibold text-[#e8e9ec] transition hover:bg-bg-soft"
       >
         Log out
       </button>
