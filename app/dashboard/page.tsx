@@ -9,11 +9,16 @@ import { HobbyCard } from "@/components/dashboard/HobbyCard";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { StreakFreezesCard } from "@/components/dashboard/StreakFreezesCard";
 import { ConsistencyChart } from "@/components/dashboard/ConsistencyChart";
+import {
+  CreateHabitDraft,
+  CreateHabitModal,
+} from "@/components/dashboard/CreateHabitModal";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -133,14 +138,18 @@ export default function DashboardPage() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-[8px] px-[18px] py-[11px] rounded-[12px] bg-gradient-to-b from-[#7a86ff] to-[#5d69f0] shadow-[0_8px_20px_-6px_rgba(111,123,255,0.55),inset_0_1px_0_rgba(255,255,255,0.25)]">
-                <span className="text-[18px] font-extrabold text-white leading-[0] -mt-[2px]">
+              <button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                className="flex items-center gap-[8px] rounded-[12px] bg-gradient-to-b from-[#7a86ff] to-[#5d69f0] px-[18px] py-[11px] shadow-[0_8px_20px_-6px_rgba(111,123,255,0.55),inset_0_1px_0_rgba(255,255,255,0.25)]"
+              >
+                <span className="-mt-[2px] text-[18px] font-extrabold leading-[0] text-white">
                   +
                 </span>
                 <span className="text-[14px] font-extrabold text-white">
-                  Check in
+                  Add habit
                 </span>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -236,7 +245,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <MobileBottomNav />
+      <MobileBottomNav onAddClick={() => setCreateOpen(true)} />
+
+      <CreateHabitModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={(draft: CreateHabitDraft) => {
+          // Frontend-only for now — wire to POST /api/habits later (HL-13).
+          console.log("Create habit draft", draft);
+        }}
+      />
     </div>
   );
 }
