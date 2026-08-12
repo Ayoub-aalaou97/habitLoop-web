@@ -16,6 +16,17 @@
   --brand-glow: rgba(111, 123, 255, 0.45);
   --brand-ring: rgba(111, 123, 255, 0.12);
   --danger: #f87171;
+  /* Mobile tab bar + home indicator clearance */
+  --mobile-nav-height: 70px;
+  --mobile-nav-offset: calc(
+    var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)
+  );
+  --mobile-content-pad: calc(var(--mobile-nav-offset) + 28px);
+}
+
+/* Force-hide tab bar while any sheet/modal is open (ported overlays). */
+body[data-sheet-open="true"] .bottom-nav {
+  display: none !important;
 }
 
 @theme inline {

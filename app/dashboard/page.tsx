@@ -23,6 +23,7 @@ import {
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { HobbyCard } from "@/components/dashboard/HobbyCard";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
+import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
 import { StreakFreezesCard } from "@/components/dashboard/StreakFreezesCard";
 import { ConsistencyChart } from "@/components/dashboard/ConsistencyChart";
 import {
@@ -373,7 +374,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="px-[22px] pb-[90px] lg:hidden">
+        <div className="px-[22px] lg:hidden">
           <div className="flex flex-col gap-[11px] pt-[4px]">
             {habitsError ? (
               <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[13px] text-danger">
@@ -402,6 +403,7 @@ export default function DashboardPage() {
               ))
             )}
           </div>
+          <MobileNavSpacer />
         </div>
       </div>
 

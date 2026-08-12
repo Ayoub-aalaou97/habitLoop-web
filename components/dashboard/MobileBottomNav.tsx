@@ -19,10 +19,7 @@ function NavTab({
   icon: ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className="flex flex-1 flex-col items-center gap-[5px]"
-    >
+    <Link href={href} className="flex flex-1 flex-col items-center gap-[5px]">
       <span className={active ? "text-[#aeb3f5]" : "text-[#5b6070]"}>
         {icon}
       </span>
@@ -39,8 +36,14 @@ function NavTab({
 
 export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
   return (
-    <div className="bottom-nav fixed bottom-0 left-0 right-0 z-20 h-[70px] border-t border-white/[0.07] bg-[#0e1014] lg:hidden">
-      <div className="flex h-full items-center px-[18px] pb-[10px]">
+    <nav
+      className="bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.07] bg-[#0e1014] lg:hidden"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+      aria-label="Primary"
+    >
+      <div className="flex h-[70px] items-center px-[18px] pb-[10px]">
         <NavTab
           href="/dashboard"
           label="Home"
@@ -49,7 +52,6 @@ export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
         />
         <NavTab href="#" label="Stats" icon={<StatisticsIcon />} />
 
-        {/* Keep the floating add button exactly as designed */}
         <div className="flex w-[64px] flex-none justify-center">
           <button
             type="button"
@@ -66,6 +68,6 @@ export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
         <NavTab href="#" label="Badges" icon={<BadgesIcon />} />
         <NavTab href="#" label="Alerts" icon={<RemindersIcon />} />
       </div>
-    </div>
+    </nav>
   );
 }
