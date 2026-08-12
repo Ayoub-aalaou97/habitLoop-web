@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,10 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "HabitLoop",
   description: "Build habits. Keep the loop going.",
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

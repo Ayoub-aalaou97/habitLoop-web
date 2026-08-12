@@ -24,6 +24,7 @@ import {
 } from "@/lib/habitDetailMock";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
+import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
 import {
   CreateHabitDraft,
@@ -31,6 +32,10 @@ import {
 } from "@/components/dashboard/CreateHabitModal";
 import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
 import { HabitDetailActions } from "@/components/dashboard/HabitDetailActions";
+import { CheckDayModal } from "@/components/dashboard/CheckDayModal";
+import { LogSessionModal } from "@/components/dashboard/LogSessionModal";
+import type { CheckInDraft } from "@/lib/checkIn";
+import { toDateKey } from "@/lib/checkIn";
 
 function StatCard({
   label,
@@ -89,6 +94,9 @@ export default function HabitDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [checkDayOpen, setCheckDayOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logDateKey, setLogDateKey] = useState<string | null>(null);
 
   const loadHabit = useCallback(async (id: number) => {
     setLoading(true);
@@ -179,6 +187,21 @@ export default function HabitDetailPage() {
     }
   }
 
+  function openCheckDay() {
+    setCheckDayOpen(true);
+  }
+
+  function openLogForDate(dateKey: string) {
+    setLogDateKey(dateKey);
+    setCheckDayOpen(false);
+    setLogOpen(true);
+  }
+
+  async function handleLogSession(_draft: CheckInDraft) {
+    // UI-only until check-in API exists.
+    await Promise.resolve();
+  }
+
   if (error && !user) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 bg-bg p-8">
@@ -260,7 +283,7 @@ export default function HabitDetailPage() {
         onLogout={logout}
       />
 
-      <div className="min-w-0 flex-1 pb-[90px] lg:pb-0">
+      <div className="min-w-0 flex-1">
         {/* Mobile top bar */}
         <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-white/[0.06] bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
           <Link
@@ -361,6 +384,7 @@ export default function HabitDetailPage() {
 
             <button
               type="button"
+              onClick={openCheckDay}
               className="inline-flex w-full items-center justify-center gap-[9px] rounded-[12px] px-[18px] py-3 sm:w-auto sm:self-start sm:py-[11px]"
               style={{
                 background: checkInGradient,
@@ -486,6 +510,8 @@ export default function HabitDetailPage() {
             </section>
           </div>
         </div>
+
+        <MobileNavSpacer />
       </div>
 
       <MobileBottomNav onAddClick={() => router.push("/dashboard")} />
@@ -496,6 +522,31 @@ export default function HabitDetailPage() {
         initialValues={apiHabitToDraft(habit)}
         onClose={() => setEditOpen(false)}
         onCreate={handleSaveHabit}
+      />
+
+      <CheckDayModal
+        open={checkDayOpen}
+        habitId={habit.id}
+        habitName={habit.name}
+        habitColor={habit.color}
+        streak={detail.currentStreak}
+        freezesRemaining={3}
+        onClose={() => setCheckDayOpen(false)}
+        onConfirm={openLogForDate}
+      />
+
+      <LogSessionModal
+        open={logOpen}
+        habits={[{ id: habit.id, name: habit.name, color: habit.color }]}
+        initialHabitId={habit.id}
+        initialDateKey={logDateKey ?? toDateKey(new Date())}
+        streakByHabitId={{ [habit.id]: detail.currentStreak }}
+        freezesRemaining={3}
+        onClose={() => {
+          setLogOpen(false);
+          setLogDateKey(null);
+        }}
+        onSubmit={handleLogSession}
       />
 
       <ConfirmDialog
