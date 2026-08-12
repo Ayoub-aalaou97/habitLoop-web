@@ -28,7 +28,9 @@ export type CreateHabitDraft = {
 type CreateHabitModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreate?: (draft: CreateHabitDraft) => void;
+  mode?: "create" | "edit";
+  initialValues?: CreateHabitDraft | null;
+  onCreate?: (draft: CreateHabitDraft) => void | Promise<void>;
 };
 
 function goalLabel(frequency: Frequency, times: number) {
@@ -55,6 +57,8 @@ function emptyMini(color: string) {
 export function CreateHabitModal({
   open,
   onClose,
+  mode = "create",
+  initialValues = null,
   onCreate,
 }: CreateHabitModalProps) {
   const [name, setName] = useState("Reading");
@@ -63,17 +67,39 @@ export function CreateHabitModal({
   const [frequency, setFrequency] = useState<Frequency>("weekly");
   const [times, setTimes] = useState(4);
   const [reminderEnabled, setReminderEnabled] = useState(true);
-  const reminderTime = "8:00 PM";
+  const [reminderTime, setReminderTime] = useState("8:00 PM");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isEdit = mode === "edit";
 
   useEffect(() => {
     if (!open) return;
 
-    setName("Reading");
-    setFrage("");
-    setColor(ACCENT_COLORS[4]);
-    setFrequency("weekly");
-    setTimes(4);
-    setReminderEnabled(true);
+    if (initialValues) {
+      setName(initialValues.name);
+      setFrage(initialValues.frage);
+      setColor(initialValues.color);
+      setFrequency(initialValues.frequency);
+      setTimes(initialValues.times);
+      setReminderEnabled(initialValues.reminderEnabled);
+      setReminderTime(initialValues.reminderTime || "8:00 PM");
+    } else {
+      setName("Reading");
+      setFrage("");
+      setColor(ACCENT_COLORS[4]);
+      setFrequency("weekly");
+      setTimes(4);
+      setReminderEnabled(true);
+      setReminderTime("8:00 PM");
+    }
+
+    setLoading(false);
+    setError(null);
+  }, [open, initialValues]);
+
+  useEffect(() => {
+    if (!open) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -89,24 +115,23 @@ export function CreateHabitModal({
     };
   }, [open, onClose]);
 
-  useEffect(() => {
-    if (!open) return;
-    if (frequency === "daily") setTimes(1);
-    else if (frequency === "weekly") setTimes(4);
-    else setTimes(2);
-  }, [frequency, open]);
-
   const mini = useMemo(() => emptyMini(color), [color]);
   const label = goalLabel(frequency, times);
-  const canCreate = name.trim().length > 0;
+  const canCreate = name.trim().length > 0 && !loading;
 
   if (!open) return null;
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  function selectFrequency(next: Frequency) {
+    setFrequency(next);
+    if (next === "daily") setTimes(1);
+    else if (next === "weekly") setTimes(4);
+    else setTimes(2);
+  }
+
+  async function submitDraft() {
     if (!canCreate) return;
 
-    onCreate?.({
+    const draft: CreateHabitDraft = {
       name: name.trim(),
       frage: frage.trim(),
       color,
@@ -114,9 +139,43 @@ export function CreateHabitModal({
       times,
       reminderEnabled,
       reminderTime,
-    });
-    onClose();
+    };
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      await onCreate?.(draft);
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEdit
+            ? "Could not update habit."
+            : "Could not create habit.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    await submitDraft();
+  }
+
+  const title = isEdit ? "Edit habit" : "New habit";
+  const subtitle = isEdit
+    ? "Update this hobby on your loop"
+    : "Add a hobby to your loop";
+  const submitLabel = loading
+    ? isEdit
+      ? "Saving…"
+      : "Creating…"
+    : isEdit
+      ? "Save changes"
+      : "Create habit";
 
   return (
     <div className="create-habit-modal fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -144,10 +203,10 @@ export function CreateHabitModal({
                 id="create-habit-title"
                 className="m-0 mb-1 text-[22px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
               >
-                New habit
+                {title}
               </h2>
               <p className="m-0 font-mono text-[13px] font-medium text-[#6b7280]">
-                Add a hobby to your loop
+                {subtitle}
               </p>
             </div>
             <button
@@ -242,7 +301,7 @@ export function CreateHabitModal({
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setFrequency(value)}
+                  onClick={() => selectFrequency(value)}
                   className={`flex-1 rounded-lg py-[9px] text-center text-[13px] font-semibold transition ${
                     active
                       ? "bg-[#2a2e37] text-[#f2f3f5] shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
@@ -314,6 +373,11 @@ export function CreateHabitModal({
 
           {/* Mobile actions (preview sits above on desktop) */}
           <div className="mt-auto flex flex-col gap-2.5 pt-5 sm:hidden">
+            {error ? (
+              <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[13px] text-danger">
+                {error}
+              </p>
+            ) : null}
             <button
               type="submit"
               disabled={!canCreate}
@@ -324,12 +388,13 @@ export function CreateHabitModal({
                 boxShadow: `0 8px 22px -6px ${color}8c, inset 0 1px 0 rgba(255,255,255,0.28)`,
               }}
             >
-              Create habit
+              {submitLabel}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab]"
+              disabled={loading}
+              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab] disabled:opacity-50"
             >
               Cancel
             </button>
@@ -418,21 +483,16 @@ export function CreateHabitModal({
           </p>
 
           <div className="mt-auto flex flex-col gap-2.5 pt-[22px]">
+            {error ? (
+              <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[13px] text-danger">
+                {error}
+              </p>
+            ) : null}
             <button
               type="button"
               disabled={!canCreate}
               onClick={() => {
-                if (!canCreate) return;
-                onCreate?.({
-                  name: name.trim(),
-                  frage: frage.trim(),
-                  color,
-                  frequency,
-                  times,
-                  reminderEnabled,
-                  reminderTime,
-                });
-                onClose();
+                void submitDraft();
               }}
               className="rounded-[13px] py-3.5 text-center text-[15px] font-bold disabled:opacity-50"
               style={{
@@ -441,12 +501,13 @@ export function CreateHabitModal({
                 boxShadow: `0 8px 22px -6px ${color}8c, inset 0 1px 0 rgba(255,255,255,0.28)`,
               }}
             >
-              Create habit
+              {submitLabel}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab] transition hover:text-[#d5d7de]"
+              disabled={loading}
+              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab] transition hover:text-[#d5d7de] disabled:opacity-50"
             >
               Cancel
             </button>

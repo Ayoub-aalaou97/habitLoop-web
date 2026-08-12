@@ -1,28 +1,90 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { DashboardHobby } from "@/lib/dashboardMock";
 import { MiniHeatmap } from "@/components/dashboard/MiniHeatmap";
 
 export function HobbyCard({
   hobby,
   variant,
+  onEdit,
+  onDelete,
 }: {
   hobby: DashboardHobby;
   variant: "desktop" | "mobile";
+  onEdit?: () => void;
+  onDelete?: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [menuOpen]);
+
+  const menu = (
+    <div ref={menuRef} className="relative shrink-0">
+      <button
+        type="button"
+        aria-label="Habit actions"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((v) => !v)}
+        className="px-1 font-bold text-[16px] leading-none tracking-[1px] text-[#4b5060] transition hover:text-[#aeb3f5]"
+      >
+        ···
+      </button>
+
+      {menuOpen ? (
+        <div className="absolute right-0 top-full z-20 mt-2 min-w-[140px] overflow-hidden rounded-xl border border-white/[0.08] bg-[#1b1e25] py-1 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7)]">
+          <button
+            type="button"
+            className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-[#e8e9ec] transition hover:bg-white/[0.05]"
+            onClick={() => {
+              setMenuOpen(false);
+              onEdit?.();
+            }}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-[#f87171] transition hover:bg-white/[0.05]"
+            onClick={() => {
+              setMenuOpen(false);
+              onDelete?.();
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+
   if (variant === "mobile") {
     return (
-      <div className="card hobby-card p-[14px] bg-bg-elevated border border-white/[0.06] rounded-[16px]">
-        <div className="flex items-start justify-between gap-3 mb-[11px]">
+      <div className="card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[14px]">
+        <div className="mb-[11px] flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-[10px]">
               <div
-                className="w-[10px] h-[10px] rounded-[3px]"
+                className="h-[10px] w-[10px] rounded-[3px]"
                 style={{
                   background: hobby.color,
                   boxShadow: `0 0 10px ${hobby.color}`,
                 }}
               />
-              <div>
-                <div className="text-[14.5px] font-bold text-[#eceef1] leading-tight truncate">
+              <div className="min-w-0">
+                <div className="truncate text-[14.5px] font-bold leading-tight text-[#eceef1]">
                   {hobby.name}
                 </div>
                 <div className="text-[11px] font-medium text-[#777c8a]">
@@ -32,16 +94,19 @@ export function HobbyCard({
             </div>
           </div>
 
-          <div className="flex items-baseline gap-1">
-            <span
-              className="font-bold text-[21px] leading-none"
-              style={{ color: hobby.color }}
-            >
-              {hobby.streak}
-            </span>
-            <span className="text-[10.5px] font-medium text-[#8a8f9c]">
-              day
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-baseline gap-1">
+              <span
+                className="text-[21px] font-bold leading-none"
+                style={{ color: hobby.color }}
+              >
+                {hobby.streak}
+              </span>
+              <span className="text-[10.5px] font-medium text-[#8a8f9c]">
+                day
+              </span>
+            </div>
+            {menu}
           </div>
         </div>
 
@@ -50,36 +115,33 @@ export function HobbyCard({
     );
   }
 
-  // desktop
   return (
-    <div className="card hobby-card p-[18px] bg-bg-elevated border border-white/[0.06] rounded-[16px]">
-      <div className="flex items-center justify-between mb-[14px]">
-        <div className="flex items-center gap-[10px] min-w-0">
+    <div className="card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
+      <div className="mb-[14px] flex items-center justify-between">
+        <div className="flex min-w-0 items-center gap-[10px]">
           <div
-            className="w-[11px] h-[11px] rounded-[3px] shrink-0"
+            className="h-[11px] w-[11px] shrink-0 rounded-[3px]"
             style={{
               background: hobby.color,
               boxShadow: `0 0 12px ${hobby.color}`,
             }}
           />
-            <div className="min-w-0">
-            <div className="text-[15px] font-bold text-[#eceef1] leading-snug truncate">
+          <div className="min-w-0">
+            <div className="truncate text-[15px] font-bold leading-snug text-[#eceef1]">
               {hobby.name}
             </div>
-            <div className="text-[11px] font-medium text-[#777c8a] leading-snug">
+            <div className="text-[11px] font-medium leading-snug text-[#777c8a]">
               {hobby.goalLabel}
             </div>
           </div>
         </div>
 
-        <span className="font-bold text-[16px] text-[#4b5060] leading-none tracking-[1px]">
-          ···
-        </span>
+        {menu}
       </div>
 
-      <div className="flex items-baseline gap-[6px] mb-[14px]">
+      <div className="mb-[14px] flex items-baseline gap-[6px]">
         <span
-          className="font-bold text-[26px] font-mono"
+          className="font-mono text-[26px] font-bold"
           style={{ color: hobby.color }}
         >
           {hobby.streak}
@@ -89,7 +151,7 @@ export function HobbyCard({
         </span>
       </div>
 
-      <div className="flex items-center justify-between mb-[12px]">
+      <div className="mb-[12px] flex items-center justify-between">
         <span className="text-[11.5px] font-medium text-[#777c8a]">
           {hobby.unit}
         </span>
@@ -98,7 +160,7 @@ export function HobbyCard({
             d.on ? (
               <div
                 key={`wd-${idx}`}
-                className="w-[9px] h-[9px] rounded-full"
+                className="h-[9px] w-[9px] rounded-full"
                 style={{
                   background: hobby.color,
                   boxShadow: `0 0 14px ${hobby.color}`,
@@ -107,7 +169,7 @@ export function HobbyCard({
             ) : (
               <div
                 key={`wd-${idx}`}
-                className="w-[9px] h-[9px] rounded-full border border-[#34384280]"
+                className="h-[9px] w-[9px] rounded-full border border-[#34384280]"
                 style={{ borderWidth: "1.5px", background: "transparent" }}
               />
             ),
@@ -119,4 +181,3 @@ export function HobbyCard({
     </div>
   );
 }
-
