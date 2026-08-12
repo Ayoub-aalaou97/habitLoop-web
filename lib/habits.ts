@@ -173,6 +173,18 @@ export async function fetchHabits(): Promise<ApiHabit[]> {
   return res.json();
 }
 
+export async function fetchHabit(id: number): Promise<ApiHabit> {
+  const res = await fetch(`${API_URL}/api/habits/${id}`, {
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readApiError(res));
+  }
+
+  return res.json();
+}
+
 export async function createHabit(
   payload: CreateHabitPayload,
 ): Promise<ApiHabit> {

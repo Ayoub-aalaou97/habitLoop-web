@@ -354,6 +354,7 @@ export default function DashboardPage() {
                       key={habit.id}
                       hobby={apiHabitToCard(habit)}
                       variant="desktop"
+                      href={`/dashboard/habits/${habit.id}`}
                       onEdit={() => openEditModal(habit)}
                       onDelete={() => setDeletingHabit(habit)}
                     />
@@ -394,6 +395,7 @@ export default function DashboardPage() {
                   key={habit.id}
                   hobby={apiHabitToCard(habit)}
                   variant="mobile"
+                  href={`/dashboard/habits/${habit.id}`}
                   onEdit={() => openEditModal(habit)}
                   onDelete={() => setDeletingHabit(habit)}
                 />
