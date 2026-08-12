@@ -45,7 +45,7 @@ export function MiniHeatmap({ mini }: { mini: MiniHeatCell[][] }) {
   return (
     <div
       ref={containerRef}
-      className="mini-heatmap flex w-full justify-between gap-[2.5px] overflow-hidden"
+      className="mini-heatmap flex w-full justify-start gap-[2.5px] overflow-hidden"
     >
       {weeks.map((week, wIdx) => (
         <div
