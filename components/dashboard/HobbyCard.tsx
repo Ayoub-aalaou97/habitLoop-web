@@ -1,22 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardHobby } from "@/lib/dashboardMock";
 import { MiniHeatmap } from "@/components/dashboard/MiniHeatmap";
 
 export function HobbyCard({
   hobby,
   variant,
+  href,
   onEdit,
   onDelete,
 }: {
   hobby: DashboardHobby;
   variant: "desktop" | "mobile";
+  href?: string;
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  function openDetail() {
+    if (href) router.push(href);
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -37,14 +45,20 @@ export function HobbyCard({
         type="button"
         aria-label="Habit actions"
         aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((v) => !v)}
+        onClick={(event) => {
+          event.stopPropagation();
+          setMenuOpen((v) => !v);
+        }}
         className="px-1 font-bold text-[16px] leading-none tracking-[1px] text-[#4b5060] transition hover:text-[#aeb3f5]"
       >
         ···
       </button>
 
       {menuOpen ? (
-        <div className="absolute right-0 top-full z-20 mt-2 min-w-[140px] overflow-hidden rounded-xl border border-white/[0.08] bg-[#1b1e25] py-1 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7)]">
+        <div
+          className="absolute right-0 top-full z-20 mt-2 min-w-[140px] overflow-hidden rounded-xl border border-white/[0.08] bg-[#1b1e25] py-1 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7)]"
+          onClick={(event) => event.stopPropagation()}
+        >
           <button
             type="button"
             className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-[#e8e9ec] transition hover:bg-white/[0.05]"
@@ -70,9 +84,28 @@ export function HobbyCard({
     </div>
   );
 
+  const interactiveProps = href
+    ? {
+        role: "link" as const,
+        tabIndex: 0,
+        onClick: openDetail,
+        onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openDetail();
+          }
+        },
+      }
+    : {};
+
   if (variant === "mobile") {
     return (
-      <div className="card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[14px]">
+      <div
+        className={`card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[14px] transition ${
+          href ? "cursor-pointer hover:border-white/[0.12]" : ""
+        }`}
+        {...interactiveProps}
+      >
         <div className="mb-[11px] flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-[10px]">
@@ -116,7 +149,12 @@ export function HobbyCard({
   }
 
   return (
-    <div className="card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
+    <div
+      className={`card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px] transition ${
+        href ? "cursor-pointer hover:border-white/[0.12]" : ""
+      }`}
+      {...interactiveProps}
+    >
       <div className="mb-[14px] flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-[10px]">
           <div
