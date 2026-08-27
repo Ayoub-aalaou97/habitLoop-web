@@ -39,6 +39,7 @@ import { toDateKey } from "@/lib/checkIn";
 import {
   ApiCheckIn,
   createHabitCheckIn,
+  deleteHabitCheckIn,
   fetchHabitCheckIns,
 } from "@/lib/checkInsApi";
 
@@ -102,6 +103,7 @@ export default function HabitDetailPage() {
   const [checkDayOpen, setCheckDayOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [logDateKey, setLogDateKey] = useState<string | null>(null);
+  const [logMode, setLogMode] = useState<"create" | "edit">("create");
   const [checkIns, setCheckIns] = useState<ApiCheckIn[]>([]);
 
   const loadHabit = useCallback(async (id: number) => {
@@ -202,14 +204,31 @@ export default function HabitDetailPage() {
     setCheckDayOpen(true);
   }
 
-  function openLogForDate(dateKey: string) {
+  function openLogForDate(dateKey: string, mode?: "create" | "edit") {
+    if (habit && dateKey < habit.created_at.slice(0, 10)) return;
+    const resolvedMode =
+      mode ??
+      (checkIns.some((item) => item.date === dateKey) ? "edit" : "create");
+    setLogMode(resolvedMode);
     setLogDateKey(dateKey);
     setCheckDayOpen(false);
     setLogOpen(true);
   }
 
+  function handleHeatmapDayClick(day: {
+    dateKey: string;
+    checked: boolean;
+    locked?: boolean;
+  }) {
+    if (day.locked) return;
+    openLogForDate(day.dateKey, day.checked ? "edit" : "create");
+  }
+
   async function handleLogSession(draft: CheckInDraft) {
     if (!habit) return;
+    if (draft.date < habit.created_at.slice(0, 10)) {
+      throw new Error("You cannot check in before this habit was created.");
+    }
 
     const created = await createHabitCheckIn(habit.id, {
       date: draft.date,
@@ -222,6 +241,23 @@ export default function HabitDetailPage() {
       return [created, ...withoutSameDay];
     });
   }
+
+  async function handleRemoveCheckIn() {
+    if (!habit || !logDateKey) return;
+
+    const existing = checkIns.find((item) => item.date === logDateKey);
+    if (!existing) {
+      throw new Error("Check-in not found for this day.");
+    }
+
+    await deleteHabitCheckIn(habit.id, existing.id);
+    setCheckIns((prev) => prev.filter((item) => item.id !== existing.id));
+  }
+
+  const editingCheckIn = useMemo(() => {
+    if (!logDateKey || logMode !== "edit") return null;
+    return checkIns.find((item) => item.date === logDateKey) ?? null;
+  }, [checkIns, logDateKey, logMode]);
 
   if (error && !user) {
     return (
@@ -271,17 +307,17 @@ export default function HabitDetailPage() {
     {
       label: "Current streak",
       value: detail.currentStreak,
-      suffix: "days",
+      suffix: detail.streakUnit === "day" ? "days" : detail.streakUnit === "week" ? "weeks" : "months",
       accent: habit.color,
       borderColor: habitColorWithAlpha(habit.color, 0.2),
     },
     {
       label: "Longest streak",
       value: detail.longestStreak,
-      suffix: "days",
+      suffix: detail.streakUnit === "day" ? "days" : detail.streakUnit === "week" ? "weeks" : "months",
     },
     {
-      label: "Completion",
+      label: "Consistency",
       value: detail.completion,
       suffix: "%",
     },
@@ -290,7 +326,7 @@ export default function HabitDetailPage() {
       value: detail.sessions,
     },
     {
-      label: "This week",
+      label: detail.periodLabel.charAt(0).toUpperCase() + detail.periodLabel.slice(1),
       value: detail.thisWeekDone,
       suffix: `/ ${detail.thisWeekTarget}`,
     },
@@ -359,6 +395,12 @@ export default function HabitDetailPage() {
           {actionError ? (
             <p className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[13px] text-danger">
               {actionError}
+            </p>
+          ) : null}
+
+          {detail.atRisk && detail.riskLabel ? (
+            <p className="mb-4 rounded-lg border border-[#fbbf24]/25 bg-[#fbbf24]/10 px-3 py-2 font-mono text-[12px] font-semibold text-[#fbbf24]">
+              {detail.riskLabel}
             </p>
           ) : null}
 
@@ -452,6 +494,7 @@ export default function HabitDetailPage() {
               weeks={detail.weeks}
               dayLabels={detail.dayLabels}
               color={habit.color}
+              onDayClick={handleHeatmapDayClick}
             />
           </div>
 
@@ -553,6 +596,7 @@ export default function HabitDetailPage() {
         streak={detail.currentStreak}
         freezesRemaining={3}
         loggedDateKeys={detail.loggedDateKeys}
+        createdDateKey={habit.created_at.slice(0, 10)}
         onClose={() => setCheckDayOpen(false)}
         onConfirm={openLogForDate}
       />
@@ -562,13 +606,18 @@ export default function HabitDetailPage() {
         habits={[{ id: habit.id, name: habit.name, color: habit.color }]}
         initialHabitId={habit.id}
         initialDateKey={logDateKey ?? toDateKey(new Date())}
+        initialMood={editingCheckIn?.mood ?? null}
+        initialNote={editingCheckIn?.note ?? null}
+        mode={logMode}
         streakByHabitId={{ [habit.id]: detail.currentStreak }}
         freezesRemaining={3}
         onClose={() => {
           setLogOpen(false);
           setLogDateKey(null);
+          setLogMode("create");
         }}
         onSubmit={handleLogSession}
+        onRemove={logMode === "edit" ? handleRemoveCheckIn : undefined}
       />
 
       <ConfirmDialog

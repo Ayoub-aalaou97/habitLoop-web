@@ -20,11 +20,28 @@ const DATE_TOOLTIP = new Intl.DateTimeFormat("en-US", {
 function cellTitle(
   dateKey: string | null,
   checked: boolean,
+  locked?: boolean,
+  interactive?: boolean,
 ): string | undefined {
   if (!dateKey) return undefined;
   const [y, m, d] = dateKey.split("-").map(Number);
   const label = DATE_TOOLTIP.format(new Date(y!, (m ?? 1) - 1, d ?? 1));
-  return checked ? `${label} · checked in` : label;
+  if (locked) return `${label} · locked`;
+  if (checked) {
+    return interactive
+      ? `${label} · checked in · click to edit`
+      : `${label} · checked in`;
+  }
+  return interactive
+    ? `${label} · click to check in`
+    : `${label} · rest`;
+}
+
+function loopBarColor(status: ActivityWeek["loopStatus"]): string | null {
+  if (status === "satisfied") return "#34d399";
+  if (status === "missed") return "#f87171";
+  if (status === "progress") return "transparent";
+  return null;
 }
 
 function useContainerWidth() {
@@ -50,14 +67,27 @@ export function ActivityHeatmap({
   weeks,
   dayLabels,
   color,
+  onDayClick,
 }: {
   weeks: ActivityWeek[];
   dayLabels: string[];
   color: string;
+  onDayClick?: (day: {
+    dateKey: string;
+    checked: boolean;
+    locked?: boolean;
+  }) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { ref: measureRef, width } = useContainerWidth();
   const legend = [0.045, 0.2, 0.42, 0.68, 0.95];
+  const todayKey = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  })();
 
   const available = Math.max(0, width - LABEL_W);
   const minGridWidth =
@@ -188,21 +218,68 @@ export function ActivityHeatmap({
                   >
                     {week.days.map((day, dIdx) => {
                       const isEmpty = day.color === "transparent";
+                      const isFuture = Boolean(
+                        day.dateKey && day.dateKey > todayKey,
+                      );
+                      const canClick =
+                        Boolean(onDayClick) &&
+                        Boolean(day.dateKey) &&
+                        !isEmpty &&
+                        !day.locked &&
+                        !isFuture;
+
                       return (
                         <div
                           key={`c-${wIdx}-${dIdx}`}
-                          title={cellTitle(day.dateKey, day.checked)}
+                          title={cellTitle(
+                            day.dateKey,
+                            day.checked,
+                            day.locked,
+                            canClick,
+                          )}
+                          role={canClick ? "button" : undefined}
+                          tabIndex={canClick ? 0 : undefined}
+                          onClick={() => {
+                            if (!canClick || !day.dateKey) return;
+                            onDayClick?.({
+                              dateKey: day.dateKey,
+                              checked: day.checked,
+                              locked: day.locked,
+                            });
+                          }}
+                          onKeyDown={(event) => {
+                            if (!canClick || !day.dateKey) return;
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onDayClick?.({
+                                dateKey: day.dateKey,
+                                checked: day.checked,
+                                locked: day.locked,
+                              });
+                            }
+                          }}
                           className={`rounded-[2px] sm:rounded-[3px] ${
-                            isEmpty ? "opacity-0" : "cursor-default"
+                            isEmpty
+                              ? "opacity-0"
+                              : canClick
+                                ? "cursor-pointer hover:brightness-125"
+                                : "cursor-default"
                           }`}
                           style={{
                             width: cell,
                             height: cell,
-                            background: isEmpty ? "transparent" : day.color,
+                            background: isEmpty
+                              ? "transparent"
+                              : day.locked
+                                ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 4px)"
+                                : day.color,
                             boxSizing: "border-box",
                             border: isEmpty
                               ? "none"
-                              : "1px solid rgba(255,255,255,0.04)",
+                              : day.locked
+                                ? "1px dashed rgba(255,255,255,0.12)"
+                                : "1px solid rgba(255,255,255,0.04)",
+                            opacity: day.locked ? 0.55 : undefined,
                           }}
                         />
                       );
@@ -210,6 +287,42 @@ export function ActivityHeatmap({
                   </div>
                 ))}
               </div>
+
+              {weeks.some((week) => week.loopStatus) ? (
+                <div
+                  className="mt-[5px] flex"
+                  style={{ gap: GAP, width: gridWidth }}
+                >
+                  {weeks.map((week, wIdx) => {
+                    const fill = loopBarColor(week.loopStatus);
+                    return (
+                      <div
+                        key={`loop-${wIdx}`}
+                        title={
+                          week.loopStatus === "satisfied"
+                            ? "Loop closed"
+                            : week.loopStatus === "missed"
+                              ? "Loop missed"
+                              : week.loopStatus === "progress"
+                                ? "Loop in progress"
+                                : undefined
+                        }
+                        className="rounded-full"
+                        style={{
+                          width: cell,
+                          height: 3,
+                          background: fill ?? "transparent",
+                          boxSizing: "border-box",
+                          border:
+                            week.loopStatus === "progress"
+                              ? "1px solid rgba(255,255,255,0.35)"
+                              : "none",
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

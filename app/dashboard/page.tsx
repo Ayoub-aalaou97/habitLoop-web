@@ -22,6 +22,8 @@ import {
 } from "@/lib/habits";
 import {
   ApiCheckIn,
+  createHabitCheckIn,
+  deleteHabitCheckIn,
   fetchHabitCheckIns,
 } from "@/lib/checkInsApi";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -35,6 +37,9 @@ import {
   CreateHabitModal,
 } from "@/components/dashboard/CreateHabitModal";
 import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
+import { LogSessionModal } from "@/components/dashboard/LogSessionModal";
+import type { CheckInDraft } from "@/lib/checkIn";
+import { toDateKey } from "@/lib/checkIn";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -50,6 +55,10 @@ export default function DashboardPage() {
   >({});
   const [habitsLoading, setHabitsLoading] = useState(true);
   const [habitsError, setHabitsError] = useState<string | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logHabitId, setLogHabitId] = useState<number | null>(null);
+  const [logDateKey, setLogDateKey] = useState<string | null>(null);
+  const [logMode, setLogMode] = useState<"create" | "edit">("create");
 
   const loadHabits = useCallback(async () => {
     setHabitsLoading(true);
@@ -170,6 +179,64 @@ export default function DashboardPage() {
     }
   }
 
+  function openMiniCheckIn(
+    habit: ApiHabit,
+    cell: { dateKey: string; checked: boolean; locked?: boolean },
+  ) {
+    if (cell.locked) return;
+    if (cell.dateKey < habit.created_at.slice(0, 10)) return;
+
+    setLogHabitId(habit.id);
+    setLogDateKey(cell.dateKey);
+    setLogMode(cell.checked ? "edit" : "create");
+    setLogOpen(true);
+  }
+
+  function closeLogModal() {
+    setLogOpen(false);
+    setLogHabitId(null);
+    setLogDateKey(null);
+    setLogMode("create");
+  }
+
+  async function handleLogSession(draft: CheckInDraft) {
+    const habit = habits.find((item) => item.id === draft.habitId);
+    if (!habit) throw new Error("Habit not found.");
+    if (draft.date < habit.created_at.slice(0, 10)) {
+      throw new Error("You cannot check in before this habit was created.");
+    }
+
+    const created = await createHabitCheckIn(habit.id, {
+      date: draft.date,
+      mood: draft.mood,
+      note: draft.note.trim() || null,
+    });
+
+    setCheckInsByHabit((prev) => {
+      const list = prev[habit.id] ?? [];
+      const withoutSameDay = list.filter((item) => item.date !== created.date);
+      return { ...prev, [habit.id]: [created, ...withoutSameDay] };
+    });
+  }
+
+  async function handleRemoveCheckIn() {
+    if (!logHabitId || !logDateKey) return;
+
+    const list = checkInsByHabit[logHabitId] ?? [];
+    const existing = list.find((item) => item.date === logDateKey);
+    if (!existing) {
+      throw new Error("Check-in not found for this day.");
+    }
+
+    await deleteHabitCheckIn(logHabitId, existing.id);
+    setCheckInsByHabit((prev) => ({
+      ...prev,
+      [logHabitId]: (prev[logHabitId] ?? []).filter(
+        (item) => item.id !== existing.id,
+      ),
+    }));
+  }
+
   const habitCards = useMemo(
     () =>
       habits.map((habit) =>
@@ -180,31 +247,49 @@ export default function DashboardPage() {
 
   const dashboardStats = useMemo(() => {
     const cards = habitCards;
-    // Count unique logged days (not duplicate rows for the same date).
     const totalSessions = Object.values(checkInsByHabit).reduce((sum, list) => {
       const uniqueDates = new Set(list.map((item) => item.date.slice(0, 10)));
       return sum + uniqueDates.size;
     }, 0);
-    const activeStreak = cards.reduce(
-      (max, card) => Math.max(max, card.streak),
-      0,
-    );
+
+    const top = cards.reduce<(typeof cards)[number] | null>((best, card) => {
+      if (!best || card.streak > best.streak) return card;
+      return best;
+    }, null);
+
     const completionRate =
       cards.length === 0
         ? 0
         : Math.round(
-            cards.reduce(
-              (sum, card) =>
-                sum + (card.target > 0 ? (card.done / card.target) * 100 : 0),
-              0,
-            ) / cards.length,
+            cards.reduce((sum, card) => sum + card.consistency, 0) /
+              cards.length,
           );
 
+    const monthCounts = new Map<string, number>();
+    for (const list of Object.values(checkInsByHabit)) {
+      for (const item of list) {
+        const key = item.date.slice(0, 7);
+        monthCounts.set(key, (monthCounts.get(key) ?? 0) + 1);
+      }
+    }
+    let bestMonth = "—";
+    let bestCount = 0;
+    for (const [key, count] of monthCounts) {
+      if (count > bestCount) {
+        bestCount = count;
+        const [y, m] = key.split("-").map(Number);
+        bestMonth = new Date(y!, (m ?? 1) - 1, 1).toLocaleString("en-US", {
+          month: "long",
+        });
+      }
+    }
+
     return {
-      activeStreak,
+      activeStreak: top?.streak ?? 0,
+      activeStreakUnit: top?.unit.replace(" streak", "s") ?? "days",
       completionRate,
       totalSessions,
-      bestMonth: dashboardMock.stats.bestMonth,
+      bestMonth,
     };
   }, [habitCards, checkInsByHabit]);
 
@@ -231,6 +316,29 @@ export default function DashboardPage() {
       .toUpperCase()
       .replace(",", " ·");
   }, []);
+
+  const logHabit = useMemo(
+    () => habits.find((habit) => habit.id === logHabitId) ?? null,
+    [habits, logHabitId],
+  );
+
+  const editingCheckIn = useMemo(() => {
+    if (!logHabitId || !logDateKey || logMode !== "edit") return null;
+    return (
+      (checkInsByHabit[logHabitId] ?? []).find(
+        (item) => item.date === logDateKey,
+      ) ?? null
+    );
+  }, [checkInsByHabit, logDateKey, logHabitId, logMode]);
+
+  const streakByHabitId = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const habit of habits) {
+      const card = habitCards.find((item) => item.id === String(habit.id));
+      if (card) map[habit.id] = card.streak;
+    }
+    return map;
+  }, [habits, habitCards]);
 
   if (error) {
     return (
@@ -339,14 +447,14 @@ export default function DashboardPage() {
                   {dashboardStats.activeStreak}
                 </span>
                 <span className="text-[13px] font-medium text-text-soft">
-                  days
+                  {dashboardStats.activeStreakUnit}
                 </span>
               </div>
             </div>
 
             <div className="rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
               <div className="mb-[10px] text-[12px] font-semibold text-text-dim">
-                Completion rate
+                Consistency
               </div>
               <div className="flex items-baseline gap-[6px]">
                 <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
@@ -421,6 +529,7 @@ export default function DashboardPage() {
                       href={`/dashboard/habits/${habit.id}`}
                       onEdit={() => openEditModal(habit)}
                       onDelete={() => setDeletingHabit(habit)}
+                      onMiniCellClick={(cell) => openMiniCheckIn(habit, cell)}
                     />
                   ))}
                 </div>
@@ -462,6 +571,7 @@ export default function DashboardPage() {
                   href={`/dashboard/habits/${habit.id}`}
                   onEdit={() => openEditModal(habit)}
                   onDelete={() => setDeletingHabit(habit)}
+                  onMiniCellClick={(cell) => openMiniCheckIn(habit, cell)}
                 />
               ))
             )}
@@ -499,6 +609,23 @@ export default function DashboardPage() {
           void handleDeleteHabit();
         }}
       />
+
+      {logHabit ? (
+        <LogSessionModal
+          open={logOpen}
+          habits={[{ id: logHabit.id, name: logHabit.name, color: logHabit.color }]}
+          initialHabitId={logHabit.id}
+          initialDateKey={logDateKey ?? toDateKey(new Date())}
+          initialMood={editingCheckIn?.mood ?? null}
+          initialNote={editingCheckIn?.note ?? null}
+          mode={logMode}
+          streakByHabitId={streakByHabitId}
+          freezesRemaining={3}
+          onClose={closeLogModal}
+          onSubmit={handleLogSession}
+          onRemove={logMode === "edit" ? handleRemoveCheckIn : undefined}
+        />
+      ) : null}
     </div>
   );
 }

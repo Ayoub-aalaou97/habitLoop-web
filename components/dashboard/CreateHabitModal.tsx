@@ -41,17 +41,19 @@ function goalLabel(frequency: Frequency, times: number) {
 }
 
 function timesUnit(frequency: Frequency) {
-  if (frequency === "daily") return "Times per day";
   if (frequency === "weekly") return "Times per week";
-  return "Times per month";
+  if (frequency === "monthly") return "Times per month";
+  return "Every day";
 }
 
-function emptyMini(color: string) {
-  const hex = color.replace("#", "");
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const off = `rgba(${r},${g},${b},0.08)`;
+function timesMax(frequency: Frequency) {
+  if (frequency === "weekly") return 7;
+  if (frequency === "monthly") return 31;
+  return 1;
+}
+
+function emptyMini(_color: string) {
+  const off = "rgba(255,255,255,0.045)";
   return Array.from({ length: 7 }, () => off);
 }
 
@@ -309,35 +311,54 @@ export function CreateHabitModal({
             })}
           </div>
 
-          <div className="mb-5 flex items-center justify-between rounded-xl bg-[#1b1e25] px-4 py-3 sm:mb-[22px]">
-            <span className="text-[13px] font-semibold text-[#9aa0ab]">
-              {timesUnit(frequency)}
-            </span>
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                aria-label="Decrease"
-                disabled={times <= 1}
-                onClick={() => setTimes((t) => Math.max(1, t - 1))}
-                className="text-[20px] font-light text-[#5b6070] transition enabled:hover:text-[#c9b0e8] disabled:opacity-40"
-              >
-                −
-              </button>
-              <span className="min-w-[1.5ch] text-center font-mono text-[16px] font-bold text-[#eceef1]">
-                {times}
-              </span>
-              <button
-                type="button"
-                aria-label="Increase"
-                disabled={times >= 14}
-                onClick={() => setTimes((t) => Math.min(14, t + 1))}
-                className="text-[20px] font-light transition disabled:opacity-40"
-                style={{ color: color }}
-              >
-                +
-              </button>
+          {frequency === "daily" ? (
+            <div className="mb-5 rounded-xl bg-[#1b1e25] px-4 py-3 sm:mb-[22px]">
+              <div className="text-[13px] font-semibold text-[#eceef1]">
+                Every day · target 1
+              </div>
+              <p className="mt-1 text-[12px] font-medium text-[#777c8a]">
+                Check in once to close today’s loop.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="mb-5 rounded-xl bg-[#1b1e25] px-4 py-3 sm:mb-[22px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-semibold text-[#9aa0ab]">
+                  {timesUnit(frequency)}
+                </span>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    aria-label="Decrease"
+                    disabled={times <= 1}
+                    onClick={() => setTimes((t) => Math.max(1, t - 1))}
+                    className="text-[20px] font-light text-[#5b6070] transition enabled:hover:text-[#c9b0e8] disabled:opacity-40"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[1.5ch] text-center font-mono text-[16px] font-bold text-[#eceef1]">
+                    {times}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Increase"
+                    disabled={times >= timesMax(frequency)}
+                    onClick={() =>
+                      setTimes((t) => Math.min(timesMax(frequency), t + 1))
+                    }
+                    className="text-[20px] font-light transition disabled:opacity-40"
+                    style={{ color: color }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <p className="mt-1.5 text-[12px] font-medium text-[#777c8a]">
+                Close the loop with {times} day
+                {times === 1 ? "" : "s"} each {frequency === "weekly" ? "week" : "month"}.
+              </p>
+            </div>
+          )}
 
           <div className="mb-5 flex items-center justify-between rounded-xl bg-[#1b1e25] px-4 py-3.5 sm:mb-0">
             <div>
@@ -427,32 +448,35 @@ export function CreateHabitModal({
               </span>
             </div>
 
-            <div className="mb-3.5 flex items-baseline gap-1.5">
-              <span
-                className="font-mono text-[26px] font-bold"
-                style={{ color }}
-              >
-                0
-              </span>
-              <span className="text-[12px] font-semibold text-[#8a8f9c]">
-                day streak
-              </span>
+            <div className="mb-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-baseline gap-1.5">
+                <span
+                  className="font-mono text-[26px] font-bold"
+                  style={{ color }}
+                >
+                  0
+                </span>
+                <span className="text-[12px] font-semibold text-[#8a8f9c]">
+                  {frequency === "daily"
+                    ? "day streak"
+                    : frequency === "weekly"
+                      ? "week streak"
+                      : "month streak"}
+                </span>
+              </div>
+              <div className="font-mono text-[12px] font-bold text-[#e8e9ec]">
+                0/{frequency === "daily" ? 1 : times}
+              </div>
             </div>
 
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[11.5px] font-medium text-[#777c8a]">
-                this week
+                {frequency === "daily"
+                  ? "today"
+                  : frequency === "weekly"
+                    ? "this week"
+                    : "this month"}
               </span>
-              <div className="flex gap-[5px]">
-                {Array.from({
-                  length: frequency === "daily" ? 7 : Math.min(times, 7),
-                }).map((_, idx) => (
-                  <div
-                    key={`dot-${idx}`}
-                    className="h-[9px] w-[9px] rounded-full border-[1.5px] border-[#34384280]"
-                  />
-                ))}
-              </div>
             </div>
 
             <div className="grid grid-cols-7 gap-1.5">
@@ -467,7 +491,7 @@ export function CreateHabitModal({
           </div>
 
           <p className="mt-4 text-[12px] font-medium leading-relaxed text-[#777c8a]">
-            Your week starts empty. Each day fills in as you check in.
+            Close the loop each {frequency === "daily" ? "day" : frequency === "weekly" ? "week" : "month"}. Streak counts consecutive loops.
           </p>
 
           <div className="mt-auto flex flex-col gap-2.5 pt-[22px]">

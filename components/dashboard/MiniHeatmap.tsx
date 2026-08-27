@@ -19,20 +19,39 @@ function toTodayKey() {
   return `${y}-${m}-${day}`;
 }
 
-function cellLabel(cell: MiniHeatCell, todayKey: string): string | null {
+function cellLabel(
+  cell: MiniHeatCell,
+  todayKey: string,
+  interactive: boolean,
+): string | null {
   if (!cell.dateKey) return null;
   const [y, m, d] = cell.dateKey.split("-").map(Number);
   const date = new Date(y!, (m ?? 1) - 1, d ?? 1);
   const when =
     cell.dateKey === todayKey ? "Today" : DATE_TOOLTIP.format(date);
-  if (cell.checked) return `${when} · checked in`;
+  if (cell.locked) return `${when} · locked`;
+  if (cell.checked) {
+    return interactive
+      ? `${when} · checked in · click to edit`
+      : `${when} · checked in`;
+  }
   if (cell.dateKey > todayKey) return `${when} · upcoming`;
-  return when;
+  return interactive ? `${when} · click to check in` : when;
 }
 
 type Tip = { x: number; y: number; text: string };
 
-export function MiniHeatmap({ mini }: { mini: MiniHeatCell[][] }) {
+export function MiniHeatmap({
+  mini,
+  onCellClick,
+}: {
+  mini: MiniHeatCell[][];
+  onCellClick?: (cell: {
+    dateKey: string;
+    checked: boolean;
+    locked?: boolean;
+  }) => void;
+}) {
   const week = mini[mini.length - 1] ?? [];
   const todayKey = toTodayKey();
   const [tip, setTip] = useState<Tip | null>(null);
@@ -43,10 +62,18 @@ export function MiniHeatmap({ mini }: { mini: MiniHeatCell[][] }) {
         {week.map((cell, idx) => {
           const isToday = cell.dateKey === todayKey;
           const isFuture = Boolean(cell.dateKey && cell.dateKey > todayKey);
-          const label = cellLabel(cell, todayKey);
+          const canClick =
+            Boolean(onCellClick) &&
+            Boolean(cell.dateKey) &&
+            !cell.locked &&
+            !isFuture;
+          const label = cellLabel(cell, todayKey, canClick);
 
           return (
-            <div key={cell.dateKey ?? `d-${idx}`} className="flex flex-col items-center gap-1.5">
+            <div
+              key={cell.dateKey ?? `d-${idx}`}
+              className="flex flex-col items-center gap-1.5"
+            >
               <span
                 className={`font-mono text-[10px] font-semibold ${
                   isToday ? "text-[#e8e9ec]" : "text-[#6b7280]"
@@ -55,18 +82,51 @@ export function MiniHeatmap({ mini }: { mini: MiniHeatCell[][] }) {
                 {DOW[idx]}
               </span>
               <div
-                className={`h-7 w-full max-w-[28px] rounded-[6px] transition-[transform,filter] duration-100 hover:z-10 hover:scale-110 hover:brightness-125 ${
-                  isFuture ? "opacity-35" : ""
+                role={canClick ? "button" : undefined}
+                tabIndex={canClick ? 0 : undefined}
+                className={`rounded-[3px] ${
+                  canClick
+                    ? "cursor-pointer hover:brightness-125"
+                    : isFuture || cell.locked
+                      ? ""
+                      : "hover:brightness-125"
                 }`}
                 style={{
-                  background: cell.color,
-                  boxShadow: cell.checked
-                    ? "inset 0 0 0 1px rgba(255,255,255,0.16)"
-                    : undefined,
+                  width: 14,
+                  height: 14,
+                  boxSizing: "border-box",
+                  background: cell.locked
+                    ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 4px)"
+                    : cell.color,
+                  border: cell.locked
+                    ? "1px dashed rgba(255,255,255,0.12)"
+                    : "1px solid rgba(255,255,255,0.04)",
+                  opacity: cell.locked ? 0.55 : 1,
                   outline: isToday
-                    ? "1.5px solid rgba(255,255,255,0.65)"
-                    : "1px solid rgba(255,255,255,0.05)",
+                    ? "1px solid rgba(255,255,255,0.45)"
+                    : "none",
                   outlineOffset: 0,
+                }}
+                onClick={(event) => {
+                  if (!canClick || !cell.dateKey) return;
+                  event.stopPropagation();
+                  onCellClick?.({
+                    dateKey: cell.dateKey,
+                    checked: Boolean(cell.checked),
+                    locked: cell.locked,
+                  });
+                }}
+                onKeyDown={(event) => {
+                  if (!canClick || !cell.dateKey) return;
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onCellClick?.({
+                      dateKey: cell.dateKey,
+                      checked: Boolean(cell.checked),
+                      locked: cell.locked,
+                    });
+                  }
                 }}
                 onMouseEnter={(event) => {
                   if (!label) return;
