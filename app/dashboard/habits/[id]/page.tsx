@@ -36,6 +36,11 @@ import { CheckDayModal } from "@/components/dashboard/CheckDayModal";
 import { LogSessionModal } from "@/components/dashboard/LogSessionModal";
 import type { CheckInDraft } from "@/lib/checkIn";
 import { toDateKey } from "@/lib/checkIn";
+import {
+  ApiCheckIn,
+  createHabitCheckIn,
+  fetchHabitCheckIns,
+} from "@/lib/checkInsApi";
 
 function StatCard({
   label,
@@ -97,16 +102,22 @@ export default function HabitDetailPage() {
   const [checkDayOpen, setCheckDayOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [logDateKey, setLogDateKey] = useState<string | null>(null);
+  const [checkIns, setCheckIns] = useState<ApiCheckIn[]>([]);
 
   const loadHabit = useCallback(async (id: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      const next = await fetchHabit(id);
+      const [next, nextCheckIns] = await Promise.all([
+        fetchHabit(id),
+        fetchHabitCheckIns(id),
+      ]);
       setHabit(next);
+      setCheckIns(nextCheckIns);
     } catch (err) {
       setHabit(null);
+      setCheckIns([]);
       setError(err instanceof Error ? err.message : "Could not load habit.");
     } finally {
       setLoading(false);
@@ -140,8 +151,8 @@ export default function HabitDetailPage() {
   }, [router, habitId, loadHabit]);
 
   const detail = useMemo(
-    () => (habit ? buildHabitDetailView(habit) : null),
-    [habit],
+    () => (habit ? buildHabitDetailView(habit, checkIns) : null),
+    [habit, checkIns],
   );
 
   async function logout() {
@@ -197,9 +208,19 @@ export default function HabitDetailPage() {
     setLogOpen(true);
   }
 
-  async function handleLogSession(_draft: CheckInDraft) {
-    // UI-only until check-in API exists.
-    await Promise.resolve();
+  async function handleLogSession(draft: CheckInDraft) {
+    if (!habit) return;
+
+    const created = await createHabitCheckIn(habit.id, {
+      date: draft.date,
+      mood: draft.mood,
+      note: draft.note.trim() || null,
+    });
+
+    setCheckIns((prev) => {
+      const withoutSameDay = prev.filter((item) => item.date !== created.date);
+      return [created, ...withoutSameDay];
+    });
   }
 
   if (error && !user) {
@@ -531,6 +552,7 @@ export default function HabitDetailPage() {
         habitColor={habit.color}
         streak={detail.currentStreak}
         freezesRemaining={3}
+        loggedDateKeys={detail.loggedDateKeys}
         onClose={() => setCheckDayOpen(false)}
         onConfirm={openLogForDate}
       />

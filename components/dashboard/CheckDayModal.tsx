@@ -6,7 +6,6 @@ import {
   formatLogButtonDate,
   formatMonthTitle,
   formatSelectedDay,
-  mockLoggedDaysForHabit,
   toDateKey,
 } from "@/lib/checkIn";
 import { habitColorWithAlpha } from "@/lib/habitDetailMock";
@@ -21,6 +20,8 @@ type CheckDayModalProps = {
   habitId: number;
   streak?: number;
   freezesRemaining?: number;
+  /** Real completed days from API (YYYY-MM-DD). */
+  loggedDateKeys?: Set<string>;
   onClose: () => void;
   onConfirm: (dateKey: string) => void;
 };
@@ -29,9 +30,10 @@ export function CheckDayModal({
   open,
   habitName,
   habitColor,
-  habitId,
+  habitId: _habitId,
   streak = 0,
   freezesRemaining = 3,
+  loggedDateKeys,
   onClose,
   onConfirm,
 }: CheckDayModalProps) {
@@ -61,10 +63,18 @@ export function CheckDayModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose, today]);
 
-  const loggedKeys = useMemo(
-    () => mockLoggedDaysForHabit(habitId, cursor.year, cursor.month),
-    [habitId, cursor.year, cursor.month],
-  );
+  const loggedKeys = useMemo(() => {
+    if (!loggedDateKeys) return new Set<string>();
+
+    const monthKeys = new Set<string>();
+    for (const key of loggedDateKeys) {
+      const [y, m] = key.split("-").map(Number);
+      if (y === cursor.year && (m ?? 0) - 1 === cursor.month) {
+        monthKeys.add(key);
+      }
+    }
+    return monthKeys;
+  }, [loggedDateKeys, cursor.year, cursor.month]);
 
   const cells = useMemo(
     () =>

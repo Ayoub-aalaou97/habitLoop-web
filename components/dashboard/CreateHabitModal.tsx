@@ -52,7 +52,7 @@ function emptyMini(color: string) {
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
   const off = `rgba(${r},${g},${b},0.08)`;
-  return Array.from({ length: 13 }, () => Array.from({ length: 7 }, () => off));
+  return Array.from({ length: 7 }, () => off);
 }
 
 export function CreateHabitModal({
@@ -455,27 +455,19 @@ export function CreateHabitModal({
               </div>
             </div>
 
-            <div className="flex gap-[2.5px]">
-              {mini.map((week, wIdx) => (
+            <div className="grid grid-cols-7 gap-1.5">
+              {mini.map((cell, idx) => (
                 <div
-                  key={`wk-${wIdx}`}
-                  className="flex flex-col gap-[2.5px]"
-                >
-                  {week.map((cell, dIdx) => (
-                    <div
-                      key={`c-${wIdx}-${dIdx}`}
-                      className="h-[9px] w-[9px] rounded-[2px]"
-                      style={{ background: cell }}
-                    />
-                  ))}
-                </div>
+                  key={`c-${idx}`}
+                  className="h-7 w-full rounded-[6px]"
+                  style={{ background: cell }}
+                />
               ))}
             </div>
           </div>
 
           <p className="mt-4 text-[12px] font-medium leading-relaxed text-[#777c8a]">
-            Your grid starts empty. Every square fills in as you check in — the
-            loop begins today.
+            Your week starts empty. Each day fills in as you check in.
           </p>
 
           <div className="mt-auto flex flex-col gap-2.5 pt-[22px]">

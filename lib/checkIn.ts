@@ -81,32 +81,6 @@ export function formatLogButtonDate(dateKey: string): string {
   }).format(date);
 }
 
-/** Deterministic mock logged days until check-in API exists. */
-export function mockLoggedDaysForHabit(
-  habitId: number,
-  year: number,
-  monthIndex: number,
-): Set<string> {
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-  const logged = new Set<string>();
-  let seed = (habitId * 97 + year * 13 + monthIndex * 31) >>> 0;
-
-  const rng = () => {
-    seed += 0x6d2b79f5;
-    let x = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    if (rng() < 0.72) {
-      logged.add(`${year}-${pad(monthIndex + 1)}-${pad(day)}`);
-    }
-  }
-
-  return logged;
-}
-
 export function buildMonthGrid(opts: {
   year: number;
   monthIndex: number;
