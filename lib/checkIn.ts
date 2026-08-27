@@ -17,7 +17,7 @@ export type CalendarDayCell = {
   key: string;
   date: string | null; // YYYY-MM-DD when in month
   day: number | null;
-  status: "empty" | "logged" | "missed" | "future" | "selected";
+  status: "empty" | "logged" | "missed" | "future" | "selected" | "locked";
 };
 
 function pad(n: number) {
@@ -86,8 +86,10 @@ export function buildMonthGrid(opts: {
   monthIndex: number;
   selectedKey: string | null;
   loggedKeys: Set<string>;
+  /** YYYY-MM-DD — days before this are locked. */
+  minDateKey?: string | null;
 }): CalendarDayCell[] {
-  const { year, monthIndex, selectedKey, loggedKeys } = opts;
+  const { year, monthIndex, selectedKey, loggedKeys, minDateKey } = opts;
   const first = new Date(year, monthIndex, 1);
   const startOffset = first.getDay(); // Sunday-start, matches design
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
@@ -113,10 +115,12 @@ export function buildMonthGrid(opts: {
     date.setHours(0, 0, 0, 0);
     const key = toDateKey(date);
     const isFuture = date.getTime() > today.getTime();
-    const isSelected = selectedKey === key;
+    const isLocked = Boolean(minDateKey && key < minDateKey);
+    const isSelected = selectedKey === key && !isLocked && !isFuture;
 
     let status: CalendarDayCell["status"] = "missed";
-    if (isSelected) status = "selected";
+    if (isLocked) status = "locked";
+    else if (isSelected) status = "selected";
     else if (isFuture) status = "future";
     else if (loggedKeys.has(key)) status = "logged";
 

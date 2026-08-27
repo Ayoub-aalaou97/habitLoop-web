@@ -3,6 +3,7 @@ import { DashboardHobby, MiniHeatCell } from "@/lib/dashboardMock";
 import type { CreateHabitDraft } from "@/components/dashboard/CreateHabitModal";
 import type { ApiCheckIn } from "@/lib/checkInsApi";
 import { normalizeCheckInDate } from "@/lib/checkInsApi";
+import { computePeriodStats } from "@/lib/periodStreak";
 
 export type ApiHabit = {
   id: number;
@@ -80,11 +81,6 @@ function toDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function parseDateKey(key: string): Date {
-  const [y, m, d] = key.split("-").map(Number);
-  return startOfDay(new Date(y!, (m ?? 1) - 1, d ?? 1));
-}
-
 function startOfWeekSunday(date: Date) {
   const next = startOfDay(date);
   next.setDate(next.getDate() - next.getDay());
@@ -110,44 +106,28 @@ function checkInsByDateMap(checkIns: ApiCheckIn[]) {
   return map;
 }
 
-function computeStreak(loggedKeys: Set<string>): number {
-  if (loggedKeys.size === 0) return 0;
-
-  const today = startOfDay(new Date());
-  const yesterday = startOfDay(new Date(today));
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  let cursor = loggedKeys.has(toDateKey(today))
-    ? today
-    : loggedKeys.has(toDateKey(yesterday))
-      ? yesterday
-      : null;
-
-  if (!cursor) return 0;
-
-  let streak = 0;
-  while (loggedKeys.has(toDateKey(cursor))) {
-    streak += 1;
-    cursor = startOfDay(new Date(cursor));
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
-
 function buildMiniFromCheckIns(
   colorHex: string,
   byDate: Map<string, ApiCheckIn>,
+  createdDateKey?: string | null,
 ): MiniHeatCell[][] {
   const { r, g, b } = hexToRgb(colorHex);
-  const off = `rgba(${r},${g},${b},0.08)`;
+  const off = "rgba(255,255,255,0.045)";
   const today = startOfDay(new Date());
   const weekStart = startOfWeekSunday(today);
+  const minKey = createdDateKey?.slice(0, 10) ?? null;
 
   const week: MiniHeatCell[] = [];
   for (let d = 0; d < 7; d++) {
     const day = startOfDay(new Date(weekStart));
     day.setDate(weekStart.getDate() + d);
     const dateKey = toDateKey(day);
+    const locked = Boolean(minKey && dateKey < minKey);
+
+    if (locked) {
+      week.push({ color: off, dateKey, checked: false, locked: true });
+      continue;
+    }
 
     if (day.getTime() > today.getTime()) {
       week.push({ color: off, dateKey, checked: false });
@@ -167,31 +147,6 @@ function buildMiniFromCheckIns(
   }
 
   return [week];
-}
-
-function countInCurrentWeek(byDate: Map<string, ApiCheckIn>): number {
-  const today = startOfDay(new Date());
-  const weekStart = startOfWeekSunday(today);
-  let count = 0;
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(weekStart);
-    day.setDate(weekStart.getDate() + i);
-    if (day.getTime() > today.getTime()) break;
-    if (byDate.has(toDateKey(day))) count += 1;
-  }
-  return count;
-}
-
-function countInCurrentMonth(byDate: Map<string, ApiCheckIn>): number {
-  const today = startOfDay(new Date());
-  const y = today.getFullYear();
-  const m = today.getMonth();
-  let count = 0;
-  for (const key of byDate.keys()) {
-    const date = parseDateKey(key);
-    if (date.getFullYear() === y && date.getMonth() === m) count += 1;
-  }
-  return count;
 }
 
 export function habitGoalLabel(habit: ApiHabit): string {
@@ -219,32 +174,27 @@ export function apiHabitToCard(
   checkIns: ApiCheckIn[] = [],
 ): DashboardHobby {
   const byDate = checkInsByDateMap(checkIns);
-  const isMonthly = habit.frequency_type === "x_times_in_y_days";
-  const target = isMonthly
-    ? Math.max(1, habit.frequency_count ?? 1)
-    : habit.frequency_type === "daily"
-      ? 7
-      : Math.max(1, Math.min(7, habit.frequency_count ?? 1));
-
-  const doneRaw = isMonthly
-    ? countInCurrentMonth(byDate)
-    : countInCurrentWeek(byDate);
-  const done = Math.min(target, doneRaw);
+  const stats = computePeriodStats({ habit, checkIns });
+  const done = Math.min(stats.periodTarget, stats.periodDone);
 
   return {
     id: String(habit.id),
     name: habit.name,
     color: habit.color,
     goalLabel: habitGoalLabel(habit),
-    streak: computeStreak(new Set(byDate.keys())),
-    unit: isMonthly ? "this month" : "this week",
+    streak: stats.currentStreak,
+    unit: stats.streakUnitLabel,
+    periodLabel: stats.periodLabel,
+    consistency: stats.consistency,
+    atRisk: stats.atRisk,
+    riskLabel: stats.riskLabel,
     done,
-    target,
-    weekDots: Array.from({ length: target }, (_, i) => ({
+    target: stats.periodTarget,
+    weekDots: Array.from({ length: stats.periodTarget }, (_, i) => ({
       on: i < done,
       off: i >= done,
     })),
-    mini: buildMiniFromCheckIns(habit.color, byDate),
+    mini: buildMiniFromCheckIns(habit.color, byDate, habit.created_at),
   };
 }
 
@@ -280,12 +230,13 @@ export function draftToCreatePayload(draft: CreateHabitDraft): CreateHabitPayloa
 
   if (draft.frequency === "daily") {
     frequency_type = "daily";
+    frequency_count = 1;
   } else if (draft.frequency === "weekly") {
     frequency_type = "x_times_per_week";
-    frequency_count = draft.times;
+    frequency_count = Math.max(1, Math.min(7, draft.times));
   } else {
     frequency_type = "x_times_in_y_days";
-    frequency_count = draft.times;
+    frequency_count = Math.max(1, Math.min(31, draft.times));
     frequency_period_days = 30;
   }
 
@@ -392,11 +343,11 @@ export function apiHabitToDraft(habit: ApiHabit): CreateHabitDraft {
 
   if (habit.frequency_type === "x_times_per_week") {
     frequency = "weekly";
-    times = habit.frequency_count ?? 3;
+    times = Math.max(1, Math.min(7, habit.frequency_count ?? 4));
   } else if (habit.frequency_type === "x_times_in_y_days") {
     frequency = "monthly";
-    times = habit.frequency_count ?? 2;
-  } else if (habit.frequency_type === "every_x_days") {
+    times = Math.max(1, Math.min(31, habit.frequency_count ?? 2));
+  } else {
     frequency = "daily";
     times = 1;
   }

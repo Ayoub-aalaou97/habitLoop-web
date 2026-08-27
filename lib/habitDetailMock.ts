@@ -2,17 +2,25 @@ import type { ApiHabit } from "@/lib/habits";
 import { habitGoalLabel } from "@/lib/habits";
 import type { ApiCheckIn } from "@/lib/checkInsApi";
 import { normalizeCheckInDate } from "@/lib/checkInsApi";
+import {
+  computePeriodStats,
+  goalFromHabit,
+  loopStatusForMonth,
+  loopStatusForWeek,
+} from "@/lib/periodStreak";
 
 export type ActivityDayCell = {
   color: string;
   /** YYYY-MM-DD when in the year grid; null for padding cells. */
   dateKey: string | null;
   checked: boolean;
+  locked?: boolean;
 };
 
 export type ActivityWeek = {
   label: string;
   days: ActivityDayCell[];
+  loopStatus?: "satisfied" | "missed" | "progress" | "future" | null;
 };
 
 export type HabitDetailCheckIn = {
@@ -28,10 +36,15 @@ export type HabitDetailView = {
   reminderLabel: string | null;
   currentStreak: number;
   longestStreak: number;
+  streakUnitLabel: string;
+  streakUnit: "day" | "week" | "month";
   completion: number;
   sessions: number;
   thisWeekDone: number;
   thisWeekTarget: number;
+  periodLabel: string;
+  atRisk: boolean;
+  riskLabel: string | null;
   weeks: ActivityWeek[];
   dayLabels: string[];
   monthly: { label: string; pct: number }[];
@@ -74,15 +87,102 @@ function cellColor(
   return `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
 }
 
-function weekTarget(habit: ApiHabit): number {
-  if (habit.frequency_type === "daily") return 7;
-  if (habit.frequency_type === "x_times_per_week") {
-    return Math.max(1, Math.min(7, habit.frequency_count ?? 1));
+function generateActivityFromCheckIns(opts: {
+  colorHex: string;
+  checkInsByDate: Map<string, ApiCheckIn>;
+  habit: ApiHabit;
+  checkIns: ApiCheckIn[];
+}): { weeks: ActivityWeek[]; sessions: number } {
+  const { colorHex, checkInsByDate, habit, checkIns } = opts;
+  const rgb = hexToRgb(colorHex);
+  const period = goalFromHabit(habit).period;
+  const createdKey = habit.created_at.slice(0, 10);
+
+  const today = startOfDay(new Date());
+  const todayMs = today.getTime();
+  const year = today.getFullYear();
+
+  const yearStart = startOfDay(new Date(year, 0, 1));
+  const yearEnd = startOfDay(new Date(year, 11, 31));
+  const gridStart = startOfWeekSunday(yearStart);
+  const gridEnd = startOfWeekSunday(yearEnd);
+  gridEnd.setDate(gridEnd.getDate() + 6);
+
+  const totalDays =
+    Math.round((gridEnd.getTime() - gridStart.getTime()) / 86400000) + 1;
+  const weekCount = Math.ceil(totalDays / 7);
+
+  let sessions = 0;
+  const weeks: ActivityWeek[] = [];
+  let prevMonth = -1;
+
+  for (let c = 0; c < weekCount; c++) {
+    let labelMonth = -1;
+    for (let r = 0; r < 7; r++) {
+      const day = startOfDay(new Date(gridStart));
+      day.setDate(gridStart.getDate() + c * 7 + r);
+      if (
+        day.getFullYear() === year &&
+        day.getTime() >= yearStart.getTime() &&
+        day.getTime() <= yearEnd.getTime()
+      ) {
+        labelMonth = day.getMonth();
+        break;
+      }
+    }
+
+    const label =
+      labelMonth >= 0 && labelMonth !== prevMonth
+        ? (MONTHS_SHORT[labelMonth] ?? "")
+        : "";
+    if (labelMonth >= 0) prevMonth = labelMonth;
+
+    const days: ActivityDayCell[] = [];
+    let weekStartKey: string | null = null;
+    for (let r = 0; r < 7; r++) {
+      const day = startOfDay(new Date(gridStart));
+      day.setDate(gridStart.getDate() + c * 7 + r);
+      const dayMs = day.getTime();
+      const inYear =
+        dayMs >= yearStart.getTime() && dayMs <= yearEnd.getTime();
+      const key = toDateKey(day);
+      const checkIn = checkInsByDate.get(key);
+      if (!weekStartKey && r === 0) weekStartKey = key;
+
+      if (!inYear) {
+        days.push({ color: "transparent", dateKey: null, checked: false });
+      } else if (key < createdKey) {
+        days.push({
+          color: "rgba(255,255,255,0.025)",
+          dateKey: key,
+          checked: false,
+          locked: true,
+        });
+      } else if (dayMs > todayMs) {
+        days.push({ color: cellColor(rgb, 0), dateKey: key, checked: false });
+      } else if (checkIn) {
+        sessions += 1;
+        days.push({
+          color: cellColor(rgb, moodToLevel(checkIn.mood)),
+          dateKey: key,
+          checked: true,
+        });
+      } else {
+        days.push({ color: cellColor(rgb, 0), dateKey: key, checked: false });
+      }
+    }
+
+    let loopStatus: ActivityWeek["loopStatus"] = null;
+    if (period === "week" && weekStartKey) {
+      loopStatus = loopStatusForWeek(weekStartKey, habit, checkIns, today);
+    } else if (period === "month" && label && labelMonth >= 0) {
+      loopStatus = loopStatusForMonth(year, labelMonth, habit, checkIns, today);
+    }
+
+    weeks.push({ label, days, loopStatus });
   }
-  if (habit.frequency_type === "x_times_in_y_days") {
-    return Math.max(1, habit.frequency_count ?? 1);
-  }
-  return 1;
+
+  return { weeks, sessions };
 }
 
 function formatStarted(createdAt: string): string {
@@ -139,127 +239,6 @@ function moodToLevel(mood: number): number {
   return 1;
 }
 
-function generateActivityFromCheckIns(opts: {
-  colorHex: string;
-  checkInsByDate: Map<string, ApiCheckIn>;
-}): { weeks: ActivityWeek[]; sessions: number } {
-  const { colorHex, checkInsByDate } = opts;
-  const rgb = hexToRgb(colorHex);
-
-  const today = startOfDay(new Date());
-  const todayMs = today.getTime();
-  const year = today.getFullYear();
-
-  const yearStart = startOfDay(new Date(year, 0, 1));
-  const yearEnd = startOfDay(new Date(year, 11, 31));
-  const gridStart = startOfWeekSunday(yearStart);
-  const gridEnd = startOfWeekSunday(yearEnd);
-  gridEnd.setDate(gridEnd.getDate() + 6);
-
-  // Use calendar-day offsets (not ms) so DST cannot skip/shift dates.
-  const totalDays =
-    Math.round((gridEnd.getTime() - gridStart.getTime()) / 86400000) + 1;
-  const weekCount = Math.ceil(totalDays / 7);
-
-  let sessions = 0;
-  const weeks: ActivityWeek[] = [];
-  let prevMonth = -1;
-
-  for (let c = 0; c < weekCount; c++) {
-    let labelMonth = -1;
-    for (let r = 0; r < 7; r++) {
-      const day = startOfDay(new Date(gridStart));
-      day.setDate(gridStart.getDate() + c * 7 + r);
-      if (
-        day.getFullYear() === year &&
-        day.getTime() >= yearStart.getTime() &&
-        day.getTime() <= yearEnd.getTime()
-      ) {
-        labelMonth = day.getMonth();
-        break;
-      }
-    }
-
-    const label =
-      labelMonth >= 0 && labelMonth !== prevMonth
-        ? (MONTHS_SHORT[labelMonth] ?? "")
-        : "";
-    if (labelMonth >= 0) prevMonth = labelMonth;
-
-    const days: ActivityDayCell[] = [];
-    for (let r = 0; r < 7; r++) {
-      const day = startOfDay(new Date(gridStart));
-      day.setDate(gridStart.getDate() + c * 7 + r);
-      const dayMs = day.getTime();
-      const inYear =
-        dayMs >= yearStart.getTime() && dayMs <= yearEnd.getTime();
-      const key = toDateKey(day);
-      const checkIn = checkInsByDate.get(key);
-
-      if (!inYear) {
-        days.push({ color: "transparent", dateKey: null, checked: false });
-      } else if (dayMs > todayMs) {
-        days.push({ color: cellColor(rgb, 0), dateKey: key, checked: false });
-      } else if (checkIn) {
-        sessions += 1;
-        days.push({
-          color: cellColor(rgb, moodToLevel(checkIn.mood)),
-          dateKey: key,
-          checked: true,
-        });
-      } else {
-        days.push({ color: cellColor(rgb, 0), dateKey: key, checked: false });
-      }
-    }
-    weeks.push({ label, days });
-  }
-
-  return { weeks, sessions };
-}
-
-function computeStreaks(sortedDateKeys: string[]): {
-  current: number;
-  longest: number;
-} {
-  if (sortedDateKeys.length === 0) return { current: 0, longest: 0 };
-
-  const unique = [...new Set(sortedDateKeys)].sort();
-  const today = startOfDay(new Date());
-  const todayKey = toDateKey(today);
-  const yesterday = startOfDay(new Date(today));
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = toDateKey(yesterday);
-
-  let longest = 1;
-  let run = 1;
-  for (let i = 1; i < unique.length; i++) {
-    const prev = parseDateKey(unique[i - 1]!);
-    const curr = parseDateKey(unique[i]!);
-    const diff = Math.round((curr.getTime() - prev.getTime()) / 86400000);
-    if (diff === 1) {
-      run += 1;
-      longest = Math.max(longest, run);
-    } else {
-      run = 1;
-    }
-  }
-
-  const set = new Set(unique);
-  let current = 0;
-  let cursor =
-    set.has(todayKey) ? today : set.has(yesterdayKey) ? yesterday : null;
-
-  if (cursor) {
-    while (set.has(toDateKey(cursor))) {
-      current += 1;
-      cursor = startOfDay(new Date(cursor));
-      cursor.setDate(cursor.getDate() - 1);
-    }
-  }
-
-  return { current, longest: Math.max(longest, current) };
-}
-
 function formatRecentCheckIn(checkIn: ApiCheckIn): HabitDetailCheckIn {
   const date = parseDateKey(normalizeCheckInDate(checkIn.date));
   const today = startOfDay(new Date());
@@ -286,19 +265,6 @@ function formatRecentCheckIn(checkIn: ApiCheckIn): HabitDetailCheckIn {
     note: checkIn.note?.trim() || "Logged a session.",
     mood: checkIn.mood,
   };
-}
-
-function thisWeekCount(checkInsByDate: Map<string, ApiCheckIn>): number {
-  const today = startOfDay(new Date());
-  const weekStart = startOfWeekSunday(today);
-  let count = 0;
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(weekStart);
-    day.setDate(weekStart.getDate() + i);
-    if (day.getTime() > today.getTime()) break;
-    if (checkInsByDate.has(toDateKey(day))) count += 1;
-  }
-  return count;
 }
 
 function monthlyFromCheckIns(
@@ -338,18 +304,11 @@ export function buildHabitDetailView(
   const { weeks, sessions } = generateActivityFromCheckIns({
     colorHex: habit.color,
     checkInsByDate,
+    habit,
+    checkIns,
   });
 
-  const sortedKeys = [...loggedDateKeys].sort();
-  const { current: currentStreak, longest: longestStreak } =
-    computeStreaks(sortedKeys);
-
-  const thisWeekTarget = weekTarget(habit);
-  const thisWeekDone = Math.min(thisWeekTarget, thisWeekCount(checkInsByDate));
-  const completion =
-    thisWeekTarget > 0
-      ? Math.min(100, Math.round((thisWeekDone / thisWeekTarget) * 100))
-      : 0;
+  const stats = computePeriodStats({ habit, checkIns });
 
   const recent = [...checkIns]
     .sort((a, b) => {
@@ -366,12 +325,17 @@ export function buildHabitDetailView(
     goalBadge: `${habitGoalLabel(habit)} goal`,
     startedLabel: formatStarted(habit.created_at),
     reminderLabel: formatReminder(habit.reminder_time),
-    currentStreak,
-    longestStreak,
-    completion,
+    currentStreak: stats.currentStreak,
+    longestStreak: stats.longestStreak,
+    streakUnitLabel: stats.streakUnitLabel,
+    streakUnit: stats.streakUnit,
+    completion: stats.consistency,
     sessions,
-    thisWeekDone,
-    thisWeekTarget,
+    thisWeekDone: stats.periodDone,
+    thisWeekTarget: stats.periodTarget,
+    periodLabel: stats.periodLabel,
+    atRisk: stats.atRisk,
+    riskLabel: stats.riskLabel,
     weeks,
     dayLabels: ["", "Mon", "", "Wed", "", "Fri", ""],
     monthly: monthlyFromCheckIns(checkIns, new Date().getFullYear()),

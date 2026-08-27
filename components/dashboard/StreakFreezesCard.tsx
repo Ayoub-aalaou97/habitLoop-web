@@ -68,8 +68,8 @@ export function StreakFreezesCard({
       </div>
 
       <p className="m-0 text-[12px] leading-snug font-medium text-[#777c8a]">
-        Miss a day and a freeze keeps your streak alive — automatically. Earn
-        one every 7-day streak.
+        Miss a loop and a freeze still counts it — one missed day, week, or
+        month stays on the streak.
       </p>
     </section>
   );

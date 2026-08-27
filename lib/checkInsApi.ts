@@ -80,3 +80,20 @@ export async function createHabitCheckIn(
     date: normalizeCheckInDate(item.date),
   };
 }
+
+export async function deleteHabitCheckIn(
+  habitId: number,
+  checkInId: number,
+): Promise<void> {
+  const res = await fetch(
+    `${API_URL}/api/habits/${habitId}/check-ins/${checkInId}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(),
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(await readApiError(res));
+  }
+}

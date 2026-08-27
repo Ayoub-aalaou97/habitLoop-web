@@ -22,6 +22,8 @@ type CheckDayModalProps = {
   freezesRemaining?: number;
   /** Real completed days from API (YYYY-MM-DD). */
   loggedDateKeys?: Set<string>;
+  /** YYYY-MM-DD — days before this cannot be logged. */
+  createdDateKey?: string | null;
   onClose: () => void;
   onConfirm: (dateKey: string) => void;
 };
@@ -34,6 +36,7 @@ export function CheckDayModal({
   streak = 0,
   freezesRemaining = 3,
   loggedDateKeys,
+  createdDateKey = null,
   onClose,
   onConfirm,
 }: CheckDayModalProps) {
@@ -76,6 +79,18 @@ export function CheckDayModal({
     return monthKeys;
   }, [loggedDateKeys, cursor.year, cursor.month]);
 
+  const minDateKey = createdDateKey?.slice(0, 10) ?? null;
+
+  const canGoPrevMonth = useMemo(() => {
+    if (!minDateKey) return true;
+    const minYear = Number(minDateKey.slice(0, 4));
+    const minMonth = Number(minDateKey.slice(5, 7)) - 1;
+    return (
+      cursor.year > minYear ||
+      (cursor.year === minYear && cursor.month > minMonth)
+    );
+  }, [cursor.year, cursor.month, minDateKey]);
+
   const cells = useMemo(
     () =>
       buildMonthGrid({
@@ -83,16 +98,23 @@ export function CheckDayModal({
         monthIndex: cursor.month,
         selectedKey,
         loggedKeys,
+        minDateKey,
       }),
-    [cursor.year, cursor.month, selectedKey, loggedKeys],
+    [cursor.year, cursor.month, selectedKey, loggedKeys, minDateKey],
   );
 
+  const selectedIsLocked = Boolean(
+    selectedKey && minDateKey && selectedKey < minDateKey,
+  );
   const selectedIsToday =
     selectedKey !== null && selectedKey === toDateKey(today);
   const selectedIsPast =
-    selectedKey !== null && selectedKey < toDateKey(today);
+    selectedKey !== null &&
+    selectedKey < toDateKey(today) &&
+    !selectedIsLocked;
   const canLog =
     selectedKey !== null &&
+    !selectedIsLocked &&
     (selectedIsToday || (selectedIsPast && freezesRemaining > 0));
 
   const selectedLabel = selectedKey ? formatSelectedDay(selectedKey) : "—";
@@ -129,6 +151,13 @@ export function CheckDayModal({
           border: "1px solid rgba(255,255,255,0.08)",
           color: "#8a8f9c",
         };
+      case "locked":
+        return {
+          background:
+            "repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 4px, #12141a 4px 8px)",
+          border: "1px dashed rgba(255,255,255,0.16)",
+          color: "#5b6070",
+        };
       case "future":
         return {
           background: "transparent",
@@ -150,8 +179,9 @@ export function CheckDayModal({
         <button
           type="button"
           aria-label="Previous month"
+          disabled={!canGoPrevMonth}
           onClick={() => shiftMonth(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[20px] font-light text-[#777c8a] transition hover:bg-white/[0.04] hover:text-white"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[20px] font-light text-[#777c8a] transition hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
         >
           ‹
         </button>
@@ -183,24 +213,64 @@ export function CheckDayModal({
         {cells.map((cell) => {
           const style = dayStyle(cell.status);
           const disabled =
-            !cell.date || cell.status === "future" || cell.status === "empty";
+            !cell.date ||
+            cell.status === "future" ||
+            cell.status === "empty" ||
+            cell.status === "locked";
 
           return (
             <button
               key={cell.key}
               type="button"
               disabled={disabled}
+              title={
+                cell.status === "locked"
+                  ? "Locked · before this habit existed"
+                  : undefined
+              }
               onClick={() => {
                 if (cell.date) setSelectedKey(cell.date);
               }}
-              className="aspect-square rounded-[9px] sm:rounded-[11px] disabled:cursor-default"
+              className="relative aspect-square rounded-[9px] sm:rounded-[11px] disabled:cursor-not-allowed"
               style={{
                 background: style.background,
                 border: style.border,
                 color: style.color,
               }}
             >
-              {cell.day ?? ""}
+              {cell.status === "locked" ? (
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                    className="text-[#6b7280]"
+                  >
+                    <path
+                      d="M7 11V8a5 5 0 0 1 10 0v3"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <rect
+                      x="5"
+                      y="11"
+                      width="14"
+                      height="10"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                  <span className="text-[9px] font-semibold leading-none sm:text-[10px]">
+                    {cell.day}
+                  </span>
+                </span>
+              ) : (
+                cell.day ?? ""
+              )}
             </button>
           );
         })}
@@ -223,6 +293,19 @@ export function CheckDayModal({
         <div className="h-[11px] w-[11px] rounded-[3px] border border-white/10 bg-[#1b1e25] sm:h-[15px] sm:w-[15px] sm:rounded" />
         <span className="font-mono text-[11px] text-[#777c8a] sm:font-sans sm:text-[12.5px] sm:text-[#9aa0ab]">
           Missed
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div
+          className="h-[11px] w-[11px] rounded-[3px] sm:h-[15px] sm:w-[15px] sm:rounded"
+          style={{
+            background:
+              "repeating-linear-gradient(135deg, rgba(255,255,255,0.08) 0 3px, #12141a 3px 6px)",
+            border: "1px dashed rgba(255,255,255,0.18)",
+          }}
+        />
+        <span className="font-mono text-[11px] text-[#777c8a] sm:font-sans sm:text-[12.5px] sm:text-[#9aa0ab]">
+          Locked
         </span>
       </div>
       <div className="flex items-center gap-2">

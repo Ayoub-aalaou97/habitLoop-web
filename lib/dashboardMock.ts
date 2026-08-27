@@ -2,6 +2,7 @@ export type MiniHeatCell = {
   color: string;
   dateKey: string | null;
   checked: boolean;
+  locked?: boolean;
 };
 
 export type DashboardWeekDot = {
@@ -15,11 +16,14 @@ export type DashboardHobby = {
   color: string; // hex
   goalLabel: string;
   streak: number;
-  unit: string; // "day streak" / "this week" etc (shown under streak)
+  unit: string; // "day streak" / "week streak"
+  periodLabel: string; // "today" / "this week" / "this month"
+  consistency: number;
+  atRisk: boolean;
+  riskLabel: string | null;
   done: number;
   target: number;
   weekDots: DashboardWeekDot[];
-  // Weeks x 7 days. The card renders the most recent weeks that fit its width.
   mini: MiniHeatCell[][];
 };
 
@@ -106,7 +110,7 @@ function generateMiniHeatmap(opts: {
 
   const days = HEATMAP_WEEKS * 7;
   const mini: MiniHeatCell[][] = [];
-  const offAlpha = 0.08;
+  const off = "rgba(255,255,255,0.045)";
 
   for (let w = 0; w < HEATMAP_WEEKS; w++) {
     const week: MiniHeatCell[] = [];
@@ -126,7 +130,7 @@ function generateMiniHeatmap(opts: {
 
       if (!isOn) {
         week.push({
-          color: `rgba(${r},${g},${b},${offAlpha})`,
+          color: off,
           dateKey,
           checked: false,
         });
@@ -222,6 +226,10 @@ export const dashboardMock: DashboardMock = (() => {
       goalLabel: d.goalLabel,
       streak: d.streak,
       unit: d.unit,
+      periodLabel: d.unit === "this month" ? "this month" : "this week",
+      consistency: 0,
+      atRisk: false,
+      riskLabel: null,
       done: d.done,
       target: d.target,
       weekDots,

@@ -5,18 +5,68 @@ import { useRouter } from "next/navigation";
 import { DashboardHobby } from "@/lib/dashboardMock";
 import { MiniHeatmap } from "@/components/dashboard/MiniHeatmap";
 
+function LoopRing({
+  done,
+  target,
+  color,
+}: {
+  done: number;
+  target: number;
+  color: string;
+}) {
+  const size = 44;
+  const stroke = 4;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = target > 0 ? Math.min(1, done / target) : 0;
+
+  return (
+    <div className="relative h-11 w-11 flex-none">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${c * pct} ${c}`}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold text-[#e8e9ec]">
+        {done}/{target}
+      </span>
+    </div>
+  );
+}
+
 export function HobbyCard({
   hobby,
   variant,
   href,
   onEdit,
   onDelete,
+  onMiniCellClick,
 }: {
   hobby: DashboardHobby;
   variant: "desktop" | "mobile";
   href?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onMiniCellClick?: (cell: {
+    dateKey: string;
+    checked: boolean;
+    locked?: boolean;
+  }) => void;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -98,6 +148,12 @@ export function HobbyCard({
       }
     : {};
 
+  const risk = hobby.atRisk ? (
+    <div className="mb-3 rounded-[10px] border border-[#fbbf24]/25 bg-[#fbbf24]/10 px-2.5 py-1.5 font-mono text-[10.5px] font-semibold text-[#fbbf24]">
+      {hobby.riskLabel}
+    </div>
+  ) : null;
+
   if (variant === "mobile") {
     return (
       <div
@@ -128,22 +184,25 @@ export function HobbyCard({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-baseline gap-1">
-              <span
-                className="text-[21px] font-bold leading-none"
-                style={{ color: hobby.color }}
-              >
-                {hobby.streak}
-              </span>
-              <span className="text-[10.5px] font-medium text-[#8a8f9c]">
-                day
-              </span>
-            </div>
+            <LoopRing done={hobby.done} target={hobby.target} color={hobby.color} />
             {menu}
           </div>
         </div>
 
-        <MiniHeatmap mini={hobby.mini} />
+        <div className="mb-2.5 flex items-baseline gap-1.5">
+          <span
+            className="font-mono text-[22px] font-bold leading-none"
+            style={{ color: hobby.color }}
+          >
+            {hobby.streak}
+          </span>
+          <span className="text-[11px] font-semibold text-[#8a8f9c]">
+            {hobby.unit}
+          </span>
+        </div>
+
+        {risk}
+        <MiniHeatmap mini={hobby.mini} onCellClick={onMiniCellClick} />
       </div>
     );
   }
@@ -177,45 +236,32 @@ export function HobbyCard({
         {menu}
       </div>
 
-      <div className="mb-[14px] flex items-baseline gap-[6px]">
-        <span
-          className="font-mono text-[26px] font-bold"
-          style={{ color: hobby.color }}
-        >
-          {hobby.streak}
-        </span>
-        <span className="text-[12px] font-semibold text-[#8a8f9c]">
-          day streak
-        </span>
-      </div>
-
-      <div className="mb-[12px] flex items-center justify-between">
-        <span className="text-[11.5px] font-medium text-[#777c8a]">
-          {hobby.unit}
-        </span>
-        <div className="flex gap-[5px]">
-          {hobby.weekDots.map((d, idx) =>
-            d.on ? (
-              <div
-                key={`wd-${idx}`}
-                className="h-[9px] w-[9px] rounded-full"
-                style={{
-                  background: hobby.color,
-                  boxShadow: `0 0 14px ${hobby.color}`,
-                }}
-              />
-            ) : (
-              <div
-                key={`wd-${idx}`}
-                className="h-[9px] w-[9px] rounded-full border border-[#34384280]"
-                style={{ borderWidth: "1.5px", background: "transparent" }}
-              />
-            ),
-          )}
+      <div className="mb-3.5 flex items-center justify-between gap-3">
+        <div className="flex items-baseline gap-[6px]">
+          <span
+            className="font-mono text-[26px] font-bold"
+            style={{ color: hobby.color }}
+          >
+            {hobby.streak}
+          </span>
+          <span className="text-[12px] font-semibold text-[#8a8f9c]">
+            {hobby.unit}
+          </span>
         </div>
+        <LoopRing done={hobby.done} target={hobby.target} color={hobby.color} />
       </div>
 
-      <MiniHeatmap mini={hobby.mini} />
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[11.5px] font-medium text-[#777c8a]">
+          {hobby.periodLabel}
+        </span>
+        <span className="font-mono text-[11px] font-semibold text-[#6b7280]">
+          {hobby.consistency}% consistency
+        </span>
+      </div>
+
+      {risk}
+      <MiniHeatmap mini={hobby.mini} onCellClick={onMiniCellClick} />
     </div>
   );
 }

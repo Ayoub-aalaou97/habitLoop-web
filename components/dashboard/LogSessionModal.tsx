@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckInDraft,
   formatCheckInWhen,
@@ -22,10 +22,14 @@ type LogSessionModalProps = {
   habits: CheckInHabitOption[];
   initialHabitId?: number | null;
   initialDateKey?: string | null;
+  initialMood?: number | null;
+  initialNote?: string | null;
+  mode?: "create" | "edit";
   streakByHabitId?: Record<number, number>;
   freezesRemaining?: number;
   onClose: () => void;
   onSubmit?: (draft: CheckInDraft) => void | Promise<void>;
+  onRemove?: () => void | Promise<void>;
 };
 
 export function LogSessionModal({
@@ -33,10 +37,14 @@ export function LogSessionModal({
   habits,
   initialHabitId = null,
   initialDateKey = null,
+  initialMood = null,
+  initialNote = null,
+  mode = "create",
   streakByHabitId = {},
   freezesRemaining = 3,
   onClose,
   onSubmit,
+  onRemove,
 }: LogSessionModalProps) {
   const todayKey = toDateKey(new Date());
   const [habitId, setHabitId] = useState<number | null>(null);
@@ -44,7 +52,12 @@ export function LogSessionModal({
   const [mood, setMood] = useState(4);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isEdit = mode === "edit";
+  const busy = loading || removing;
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
 
   useEffect(() => {
     if (!open) return;
@@ -52,18 +65,28 @@ export function LogSessionModal({
     const fallbackId = habits[0]?.id ?? null;
     setHabitId(initialHabitId ?? fallbackId);
     setDateKey(initialDateKey ?? todayKey);
-    setMood(4);
-    setNote("");
+    setMood(initialMood ?? 4);
+    setNote(initialNote ?? "");
     setLoading(false);
+    setRemoving(false);
     setError(null);
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && !loading) onClose();
+      if (event.key === "Escape" && !busyRef.current) onClose();
     }
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, habits, initialHabitId, initialDateKey, todayKey, onClose]);
+  }, [
+    open,
+    habits,
+    initialHabitId,
+    initialDateKey,
+    initialMood,
+    initialNote,
+    todayKey,
+    onClose,
+  ]);
 
   const selectedHabit = useMemo(
     () => habits.find((h) => h.id === habitId) ?? null,
@@ -94,37 +117,73 @@ export function LogSessionModal({
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not log session.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEdit
+            ? "Could not update check-in."
+            : "Could not log session.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  async function handleRemove() {
+    if (!onRemove) return;
+
+    setRemoving(true);
+    setError(null);
+
+    try {
+      await onRemove();
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not remove check-in.",
+      );
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   const whenLabel = formatCheckInWhen(dateKey);
-  const title = selectedHabit ? `Log ${selectedHabit.name}` : "Log a session";
+  const title = selectedHabit
+    ? isEdit
+      ? `Edit ${selectedHabit.name}`
+      : `Log ${selectedHabit.name}`
+    : isEdit
+      ? "Edit check-in"
+      : "Log a session";
+  const mobileTitle = isEdit ? "Edit check-in" : "Log a session";
+  const submitLabel = (() => {
+    if (loading) return "Saving…";
+    if (isEdit) return "Save changes";
+    if (isBackfill) return `Log session for ${formatLogButtonDate(dateKey)}`;
+    return `Log session · keeps your ${streak}-day streak`;
+  })();
 
   function moodButtonStyle(n: number) {
-    if (n === mood) {
+    // Scale fill by mood level so 5 is strongest and 1 is lightest.
+    const fillAlpha = 0.12 + (n - 1) * 0.2; // 1→0.12 … 5→0.92
+    const isSelected = n === mood;
+
+    if (isSelected) {
       return {
-        background: `linear-gradient(160deg,${habitColorWithAlpha(color, 0.95)},${color})`,
-        color: "#06283a",
-        boxShadow: `0 0 0 2px ${color}, 0 6px 16px -4px ${habitColorWithAlpha(color, 0.6)}`,
+        background:
+          n >= 5
+            ? `linear-gradient(160deg,${habitColorWithAlpha(color, 1)},${color})`
+            : `linear-gradient(160deg,${habitColorWithAlpha(color, Math.min(1, fillAlpha + 0.18))},${habitColorWithAlpha(color, Math.min(1, fillAlpha + 0.08))})`,
+        color: n >= 4 ? "#06283a" : habitColorWithAlpha(color, 0.95),
+        boxShadow: `0 0 0 2px ${color}, 0 6px 16px -4px ${habitColorWithAlpha(color, 0.55)}`,
         border: "none",
       };
     }
-    if (n < mood) {
-      const alpha = 0.12 + n * 0.1;
-      return {
-        background: habitColorWithAlpha(color, alpha),
-        color: habitColorWithAlpha(color, 0.85),
-        border: "none",
-        boxShadow: "none",
-      };
-    }
+
     return {
-      background: "#1b1e25",
-      color: "#5b6070",
-      border: "1px solid rgba(255,255,255,0.07)",
+      background: habitColorWithAlpha(color, fillAlpha),
+      color: n >= 4 ? "#06283a" : habitColorWithAlpha(color, 0.9),
+      border: "1px solid transparent",
       boxShadow: "none",
     };
   }
@@ -136,9 +195,9 @@ export function LogSessionModal({
           type="button"
           aria-label="Close"
           className="absolute inset-0 bg-[rgba(8,9,11,0.62)]"
-          disabled={loading}
+          disabled={busy}
           onClick={() => {
-            if (!loading) onClose();
+            if (!busy) onClose();
           }}
         />
 
@@ -166,7 +225,7 @@ export function LogSessionModal({
                   id="log-session-title"
                   className="m-0 mb-1 text-[22px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
                 >
-                  <span className="sm:hidden">Log a session</span>
+                  <span className="sm:hidden">{mobileTitle}</span>
                   <span className="hidden sm:inline">{title}</span>
                 </h2>
                 <p
@@ -185,7 +244,7 @@ export function LogSessionModal({
             <button
               type="button"
               aria-label="Close"
-              disabled={loading}
+              disabled={busy}
               onClick={onClose}
               className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-white/[0.07] bg-[#1b1e25] text-[16px] text-[#9aa0ab] transition hover:text-white disabled:opacity-50"
             >
@@ -278,7 +337,7 @@ export function LogSessionModal({
             className="mb-5 w-full resize-none rounded-[13px] border border-white/[0.08] bg-[#1b1e25] px-4 py-3.5 text-[14px] font-medium leading-relaxed text-[#cfd2d8] outline-none placeholder:text-[#5b6070] focus:border-white/[0.16] sm:mb-5"
           />
 
-          {isBackfill ? (
+          {isBackfill && !isEdit ? (
             <div className="mb-5 flex items-start gap-3 rounded-[13px] border border-[rgba(251,113,133,0.28)] bg-[rgba(251,113,133,0.09)] px-4 py-3.5">
               <div className="mt-0.5 flex gap-[3px]">
                 <div className="h-[13px] w-[10px] rounded-[3px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8]" />
@@ -299,31 +358,41 @@ export function LogSessionModal({
           ) : null}
         </div>
 
-        <div className="flex flex-none flex-col gap-2.5 border-t border-white/[0.06] bg-[#0e1014] px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:flex-row sm:px-[30px] sm:pb-4">
-          <button
-            type="submit"
-            disabled={loading || !habitId}
-            className="order-1 w-full flex-1 rounded-[14px] py-4 text-center text-[15px] font-bold disabled:opacity-50 sm:order-2 sm:py-[15px]"
-            style={{
-              background: `linear-gradient(180deg,${habitColorWithAlpha(color, 0.95)},${habitColorWithAlpha(color, 0.7)})`,
-              color: "#06283a",
-              boxShadow: `0 8px 22px -6px ${habitColorWithAlpha(color, 0.55)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
-            }}
-          >
-            {loading
-              ? "Saving…"
-              : isBackfill
-                ? `Log session for ${formatLogButtonDate(dateKey)}`
-                : `Log session · keeps your ${streak}-day streak`}
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={onClose}
-            className="order-2 w-full rounded-[14px] border border-white/[0.07] bg-[#1b1e25] py-3.5 text-[14px] font-semibold text-[#9aa0ab] transition hover:text-white disabled:opacity-50 sm:order-1 sm:w-auto sm:flex-none sm:px-6 sm:py-[15px]"
-          >
-            Cancel
-          </button>
+        <div className="flex flex-none flex-col gap-2.5 border-t border-white/[0.06] bg-[#0e1014] px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-[30px] sm:pb-4">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <button
+              type="submit"
+              disabled={busy || !habitId}
+              className="order-1 w-full flex-1 rounded-[14px] py-4 text-center text-[15px] font-bold disabled:opacity-50 sm:order-2 sm:py-[15px]"
+              style={{
+                background: `linear-gradient(180deg,${habitColorWithAlpha(color, 0.95)},${habitColorWithAlpha(color, 0.7)})`,
+                color: "#06283a",
+                boxShadow: `0 8px 22px -6px ${habitColorWithAlpha(color, 0.55)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
+              }}
+            >
+              {submitLabel}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onClose}
+              className="order-2 w-full rounded-[14px] border border-white/[0.07] bg-[#1b1e25] py-3.5 text-[14px] font-semibold text-[#9aa0ab] transition hover:text-white disabled:opacity-50 sm:order-1 sm:w-auto sm:flex-none sm:px-6 sm:py-[15px]"
+            >
+              Cancel
+            </button>
+          </div>
+          {isEdit && onRemove ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void handleRemove();
+              }}
+              className="w-full rounded-[14px] border border-[#f87171]/25 bg-[#f87171]/10 py-3 text-[13px] font-semibold text-[#f87171] transition hover:bg-[#f87171]/15 disabled:opacity-50"
+            >
+              {removing ? "Removing…" : "Remove check-in"}
+            </button>
+          ) : null}
         </div>
       </form>
       </div>
