@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import {
   BadgesIcon,
   DashboardIcon,
@@ -35,6 +38,11 @@ function NavTab({
 }
 
 export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
+  const pathname = usePathname();
+  const onDashboard =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/habits");
+  const onStats = pathname.startsWith("/dashboard/statistics");
+
   return (
     <nav
       className="bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.07] bg-[#0e1014] lg:hidden"
@@ -47,10 +55,15 @@ export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
         <NavTab
           href="/dashboard"
           label="Home"
-          active
+          active={onDashboard}
           icon={<DashboardIcon />}
         />
-        <NavTab href="#" label="Stats" icon={<StatisticsIcon />} />
+        <NavTab
+          href="/dashboard/statistics"
+          label="Stats"
+          active={onStats}
+          icon={<StatisticsIcon />}
+        />
 
         <div className="flex w-[64px] flex-none justify-center">
           <button
