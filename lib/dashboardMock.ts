@@ -1,4 +1,8 @@
-export type MiniHeatCell = string; // css color (or "transparent")
+export type MiniHeatCell = {
+  color: string;
+  dateKey: string | null;
+  checked: boolean;
+};
 
 export type DashboardWeekDot = {
   on: boolean;
@@ -70,6 +74,20 @@ function alphaForLevel(level: number) {
 // Generated wide enough that the widest card can still be filled edge to edge.
 const HEATMAP_WEEKS = 40;
 
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function toDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function startOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
 function generateMiniHeatmap(opts: {
   colorHex: string;
   density: number;
@@ -80,25 +98,48 @@ function generateMiniHeatmap(opts: {
   const { r, g, b } = hexToRgb(colorHex);
   const rng = mulberry32(seed);
 
+  const today = startOfDay(new Date());
+  const endWeek = startOfDay(new Date(today));
+  endWeek.setDate(endWeek.getDate() - endWeek.getDay());
+  const startWeek = startOfDay(new Date(endWeek));
+  startWeek.setDate(endWeek.getDate() - (HEATMAP_WEEKS - 1) * 7);
+
   const days = HEATMAP_WEEKS * 7;
   const mini: MiniHeatCell[][] = [];
-  const offAlpha = 0.08; // show unchecked days (github-like muted blocks)
+  const offAlpha = 0.08;
 
   for (let w = 0; w < HEATMAP_WEEKS; w++) {
     const week: MiniHeatCell[] = [];
     for (let d = 0; d < 7; d++) {
+      const day = startOfDay(new Date(startWeek));
+      day.setDate(startWeek.getDate() + w * 7 + d);
+      const dateKey = toDateKey(day);
+
+      if (day.getTime() > today.getTime()) {
+        week.push({ color: "transparent", dateKey: null, checked: false });
+        continue;
+      }
+
       const idx = w * 7 + d;
       const inStreakBoost = idx >= days - streakLen;
       const isOn = inStreakBoost ? rng() < 0.96 : rng() < density;
 
       if (!isOn) {
-        week.push(`rgba(${r},${g},${b},${offAlpha})`);
+        week.push({
+          color: `rgba(${r},${g},${b},${offAlpha})`,
+          dateKey,
+          checked: false,
+        });
         continue;
       }
 
       const baseLevel = inStreakBoost ? 4 : 1 + Math.floor(rng() * 4);
       const alpha = alphaForLevel(baseLevel);
-      week.push(`rgba(${r},${g},${b},${alpha})`);
+      week.push({
+        color: `rgba(${r},${g},${b},${alpha})`,
+        dateKey,
+        checked: true,
+      });
     }
     mini.push(week);
   }

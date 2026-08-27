@@ -1,66 +1,104 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { MiniHeatCell } from "@/lib/dashboardMock";
 
-const CELL_PX = 9;
-const GAP_PX = 2.5;
-const DEFAULT_WEEKS = 13;
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/**
- * Renders the most recent weeks that fit the available width, so the grid
- * always reaches the right edge of the card instead of leaving a gap.
- */
-function useVisibleWeekCount(maxWeeks: number) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [weekCount, setWeekCount] = useState(DEFAULT_WEEKS);
+const DATE_TOOLTIP = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+});
 
-  useEffect(() => {
-    const element = containerRef.current;
-    if (!element) return;
-
-    const measure = () => {
-      const width = element.clientWidth;
-      if (!width) return;
-
-      const fits = Math.floor((width + GAP_PX) / (CELL_PX + GAP_PX));
-      setWeekCount(Math.max(1, Math.min(maxWeeks, fits)));
-    };
-
-    measure();
-
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [maxWeeks]);
-
-  return { containerRef, weekCount };
+function toTodayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
+function cellLabel(cell: MiniHeatCell, todayKey: string): string | null {
+  if (!cell.dateKey) return null;
+  const [y, m, d] = cell.dateKey.split("-").map(Number);
+  const date = new Date(y!, (m ?? 1) - 1, d ?? 1);
+  const when =
+    cell.dateKey === todayKey ? "Today" : DATE_TOOLTIP.format(date);
+  if (cell.checked) return `${when} · checked in`;
+  if (cell.dateKey > todayKey) return `${when} · upcoming`;
+  return when;
+}
+
+type Tip = { x: number; y: number; text: string };
+
 export function MiniHeatmap({ mini }: { mini: MiniHeatCell[][] }) {
-  const { containerRef, weekCount } = useVisibleWeekCount(mini.length);
-  const weeks = mini.slice(-weekCount);
+  const week = mini[mini.length - 1] ?? [];
+  const todayKey = toTodayKey();
+  const [tip, setTip] = useState<Tip | null>(null);
 
   return (
-    <div
-      ref={containerRef}
-      className="mini-heatmap flex w-full justify-start gap-[2.5px] overflow-hidden"
-    >
-      {weeks.map((week, wIdx) => (
+    <div className="relative w-full">
+      <div className="grid grid-cols-7 gap-1.5">
+        {week.map((cell, idx) => {
+          const isToday = cell.dateKey === todayKey;
+          const isFuture = Boolean(cell.dateKey && cell.dateKey > todayKey);
+          const label = cellLabel(cell, todayKey);
+
+          return (
+            <div key={cell.dateKey ?? `d-${idx}`} className="flex flex-col items-center gap-1.5">
+              <span
+                className={`font-mono text-[10px] font-semibold ${
+                  isToday ? "text-[#e8e9ec]" : "text-[#6b7280]"
+                }`}
+              >
+                {DOW[idx]}
+              </span>
+              <div
+                className={`h-7 w-full max-w-[28px] rounded-[6px] transition-[transform,filter] duration-100 hover:z-10 hover:scale-110 hover:brightness-125 ${
+                  isFuture ? "opacity-35" : ""
+                }`}
+                style={{
+                  background: cell.color,
+                  boxShadow: cell.checked
+                    ? "inset 0 0 0 1px rgba(255,255,255,0.16)"
+                    : undefined,
+                  outline: isToday
+                    ? "1.5px solid rgba(255,255,255,0.65)"
+                    : "1px solid rgba(255,255,255,0.05)",
+                  outlineOffset: 0,
+                }}
+                onMouseEnter={(event) => {
+                  if (!label) return;
+                  setTip({
+                    x: event.clientX,
+                    y: event.clientY,
+                    text: label,
+                  });
+                }}
+                onMouseMove={(event) => {
+                  if (!label) return;
+                  setTip({
+                    x: event.clientX,
+                    y: event.clientY,
+                    text: label,
+                  });
+                }}
+                onMouseLeave={() => setTip(null)}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {tip ? (
         <div
-          key={`wk-${wIdx}`}
-          className="mini-heatmap-week flex flex-none flex-col gap-[2.5px]"
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-white/10 bg-[#16181f] px-2 py-1 font-mono text-[11px] font-medium text-[#e8e9ec] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
+          style={{ left: tip.x, top: tip.y }}
         >
-          {week.map((cell, dIdx) => (
-            <div
-              key={`c-${wIdx}-${dIdx}`}
-              className="mini-heatmap-cell h-[9px] w-[9px] flex-none rounded-[2px]"
-              style={{ background: cell }}
-            />
-          ))}
+          {tip.text}
         </div>
-      ))}
+      ) : null}
     </div>
   );
 }

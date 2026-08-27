@@ -10,6 +10,23 @@ const MIN_CELL = 10;
 const SCROLL_CELL = 12;
 const MAX_CELL = 16;
 
+const DATE_TOOLTIP = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+function cellTitle(
+  dateKey: string | null,
+  checked: boolean,
+): string | undefined {
+  if (!dateKey) return undefined;
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const label = DATE_TOOLTIP.format(new Date(y!, (m ?? 1) - 1, d ?? 1));
+  return checked ? `${label} · checked in` : label;
+}
+
 function useContainerWidth() {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -169,18 +186,19 @@ export function ActivityHeatmap({
                     className="flex flex-col"
                     style={{ width: cell, gap: GAP }}
                   >
-                    {week.days.map((bg, dIdx) => {
-                      const isEmpty = bg === "transparent";
+                    {week.days.map((day, dIdx) => {
+                      const isEmpty = day.color === "transparent";
                       return (
                         <div
                           key={`c-${wIdx}-${dIdx}`}
+                          title={cellTitle(day.dateKey, day.checked)}
                           className={`rounded-[2px] sm:rounded-[3px] ${
-                            isEmpty ? "opacity-0" : ""
+                            isEmpty ? "opacity-0" : "cursor-default"
                           }`}
                           style={{
                             width: cell,
                             height: cell,
-                            background: isEmpty ? "transparent" : bg,
+                            background: isEmpty ? "transparent" : day.color,
                             boxSizing: "border-box",
                             border: isEmpty
                               ? "none"

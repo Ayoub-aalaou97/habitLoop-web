@@ -20,6 +20,10 @@ import {
   fetchHabits,
   updateHabit,
 } from "@/lib/habits";
+import {
+  ApiCheckIn,
+  fetchHabitCheckIns,
+} from "@/lib/checkInsApi";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { HobbyCard } from "@/components/dashboard/HobbyCard";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
@@ -41,6 +45,9 @@ export default function DashboardPage() {
   const [deletingHabit, setDeletingHabit] = useState<ApiHabit | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [habits, setHabits] = useState<ApiHabit[]>([]);
+  const [checkInsByHabit, setCheckInsByHabit] = useState<
+    Record<number, ApiCheckIn[]>
+  >({});
   const [habitsLoading, setHabitsLoading] = useState(true);
   const [habitsError, setHabitsError] = useState<string | null>(null);
 
@@ -51,6 +58,18 @@ export default function DashboardPage() {
     try {
       const next = await fetchHabits();
       setHabits(next);
+
+      const pairs = await Promise.all(
+        next.map(async (habit) => {
+          try {
+            const checkIns = await fetchHabitCheckIns(habit.id);
+            return [habit.id, checkIns] as const;
+          } catch {
+            return [habit.id, [] as ApiCheckIn[]] as const;
+          }
+        }),
+      );
+      setCheckInsByHabit(Object.fromEntries(pairs));
     } catch (err) {
       setHabitsError(
         err instanceof Error ? err.message : "Could not load habits.",
@@ -124,6 +143,7 @@ export default function DashboardPage() {
 
     const created = await createHabit(payload);
     setHabits((prev) => [created, ...prev]);
+    setCheckInsByHabit((prev) => ({ ...prev, [created.id]: [] }));
   }
 
   async function handleDeleteHabit() {
@@ -135,6 +155,11 @@ export default function DashboardPage() {
     try {
       await deleteHabit(deletingHabit.id);
       setHabits((prev) => prev.filter((h) => h.id !== deletingHabit.id));
+      setCheckInsByHabit((prev) => {
+        const next = { ...prev };
+        delete next[deletingHabit.id];
+        return next;
+      });
       setDeletingHabit(null);
     } catch (err) {
       setHabitsError(
@@ -144,6 +169,44 @@ export default function DashboardPage() {
       setDeleteLoading(false);
     }
   }
+
+  const habitCards = useMemo(
+    () =>
+      habits.map((habit) =>
+        apiHabitToCard(habit, checkInsByHabit[habit.id] ?? []),
+      ),
+    [habits, checkInsByHabit],
+  );
+
+  const dashboardStats = useMemo(() => {
+    const cards = habitCards;
+    // Count unique logged days (not duplicate rows for the same date).
+    const totalSessions = Object.values(checkInsByHabit).reduce((sum, list) => {
+      const uniqueDates = new Set(list.map((item) => item.date.slice(0, 10)));
+      return sum + uniqueDates.size;
+    }, 0);
+    const activeStreak = cards.reduce(
+      (max, card) => Math.max(max, card.streak),
+      0,
+    );
+    const completionRate =
+      cards.length === 0
+        ? 0
+        : Math.round(
+            cards.reduce(
+              (sum, card) =>
+                sum + (card.target > 0 ? (card.done / card.target) * 100 : 0),
+              0,
+            ) / cards.length,
+          );
+
+    return {
+      activeStreak,
+      completionRate,
+      totalSessions,
+      bestMonth: dashboardMock.stats.bestMonth,
+    };
+  }, [habitCards, checkInsByHabit]);
 
   const greetingDateLine = useMemo(() => {
     const weekday = new Intl.DateTimeFormat("en-US", {
@@ -273,7 +336,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-baseline gap-[6px]">
                 <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
-                  {dashboardMock.stats.activeStreak}
+                  {dashboardStats.activeStreak}
                 </span>
                 <span className="text-[13px] font-medium text-text-soft">
                   days
@@ -287,7 +350,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-baseline gap-[6px]">
                 <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
-                  {dashboardMock.stats.completionRate}
+                  {dashboardStats.completionRate}
                 </span>
                 <span className="text-[13px] font-medium text-text-soft">%</span>
               </div>
@@ -299,7 +362,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-baseline gap-[6px]">
                 <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
-                  {dashboardMock.stats.totalSessions}
+                  {dashboardStats.totalSessions}
                 </span>
               </div>
             </div>
@@ -310,7 +373,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-baseline gap-[6px]">
                 <span className="text-[24px] font-bold text-[#f4f5f7]">
-                  {dashboardMock.stats.bestMonth}
+                  {dashboardStats.bestMonth}
                 </span>
               </div>
             </div>
@@ -350,10 +413,10 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-[16px]">
-                  {habits.map((habit) => (
+                  {habits.map((habit, index) => (
                     <HobbyCard
                       key={habit.id}
-                      hobby={apiHabitToCard(habit)}
+                      hobby={habitCards[index]!}
                       variant="desktop"
                       href={`/dashboard/habits/${habit.id}`}
                       onEdit={() => openEditModal(habit)}
@@ -391,10 +454,10 @@ export default function DashboardPage() {
                 </p>
               </div>
             ) : (
-              habits.map((habit) => (
+              habits.map((habit, index) => (
                 <HobbyCard
                   key={habit.id}
-                  hobby={apiHabitToCard(habit)}
+                  hobby={habitCards[index]!}
                   variant="mobile"
                   href={`/dashboard/habits/${habit.id}`}
                   onEdit={() => openEditModal(habit)}
