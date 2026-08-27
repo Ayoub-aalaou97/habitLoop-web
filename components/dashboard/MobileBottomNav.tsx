@@ -43,6 +43,7 @@ export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
     pathname === "/dashboard" || pathname.startsWith("/dashboard/habits");
   const onStats = pathname.startsWith("/dashboard/statistics");
   const onBadges = pathname.startsWith("/dashboard/badges");
+  const onReminders = pathname.startsWith("/dashboard/reminders");
 
   return (
     <nav
@@ -85,7 +86,12 @@ export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
           active={onBadges}
           icon={<BadgesIcon />}
         />
-        <NavTab href="#" label="Alerts" icon={<RemindersIcon />} />
+        <NavTab
+          href="/dashboard/reminders"
+          label="Alerts"
+          active={onReminders}
+          icon={<RemindersIcon />}
+        />
       </div>
     </nav>
   );

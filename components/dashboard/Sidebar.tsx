@@ -45,7 +45,12 @@ const NAV_ITEMS: {
     match: (pathname) => pathname.startsWith("/dashboard/badges"),
     icon: BadgesIcon,
   },
-  { label: "Reminders", href: "#", match: () => false, icon: RemindersIcon },
+  {
+    label: "Reminders",
+    href: "/dashboard/reminders",
+    match: (pathname) => pathname.startsWith("/dashboard/reminders"),
+    icon: RemindersIcon,
+  },
 ];
 
 export function Sidebar({
@@ -55,6 +60,7 @@ export function Sidebar({
   bestMonth,
   bestMonthPct,
   nextBadge,
+  quietHoursLabel,
 }: {
   userName: string;
   userPlanLabel: string;
@@ -62,6 +68,7 @@ export function Sidebar({
   bestMonth?: string;
   bestMonthPct?: number;
   nextBadge?: BadgeItem | null;
+  quietHoursLabel?: string;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -73,6 +80,8 @@ export function Sidebar({
     pathname.startsWith("/dashboard/statistics");
   const showNextBadge =
     Boolean(nextBadge) && pathname.startsWith("/dashboard/badges");
+  const showQuietHours =
+    Boolean(quietHoursLabel) && pathname.startsWith("/dashboard/reminders");
 
   return (
     <>
@@ -188,6 +197,20 @@ export function Sidebar({
                     background: "linear-gradient(90deg,#fcd34d,#f59e0b)",
                   }}
                 />
+              </div>
+            </div>
+          ) : null}
+
+          {showQuietHours && quietHoursLabel && !collapsed ? (
+            <div className="mb-3 rounded-2xl border border-white/[0.06] bg-[#15171c] p-[15px]">
+              <div className="mb-2 font-mono text-[10px] font-semibold tracking-[0.1em] text-[#6b7280]">
+                QUIET HOURS
+              </div>
+              <div className="mb-1.5 font-mono text-[15px] font-bold text-[#eceef1]">
+                {quietHoursLabel}
+              </div>
+              <div className="text-[11px] font-medium text-[#777c8a]">
+                Nothing gets through
               </div>
             </div>
           ) : null}
