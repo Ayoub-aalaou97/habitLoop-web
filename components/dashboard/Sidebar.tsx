@@ -12,6 +12,7 @@ import {
   RemindersIcon,
   StatisticsIcon,
 } from "@/components/dashboard/NavIcons";
+import type { BadgeItem } from "@/lib/badges";
 
 type IconComponent = (props: { className?: string }) => ReactNode;
 
@@ -38,7 +39,12 @@ const NAV_ITEMS: {
     match: (pathname) => pathname.startsWith("/dashboard/statistics"),
     icon: StatisticsIcon,
   },
-  { label: "Badges", href: "#", match: () => false, icon: BadgesIcon },
+  {
+    label: "Badges",
+    href: "/dashboard/badges",
+    match: (pathname) => pathname.startsWith("/dashboard/badges"),
+    icon: BadgesIcon,
+  },
   { label: "Reminders", href: "#", match: () => false, icon: RemindersIcon },
 ];
 
@@ -48,12 +54,14 @@ export function Sidebar({
   onLogout,
   bestMonth,
   bestMonthPct,
+  nextBadge,
 }: {
   userName: string;
   userPlanLabel: string;
   onLogout: () => void;
   bestMonth?: string;
   bestMonthPct?: number;
+  nextBadge?: BadgeItem | null;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -63,6 +71,8 @@ export function Sidebar({
     Boolean(bestMonth) &&
     bestMonth !== "—" &&
     pathname.startsWith("/dashboard/statistics");
+  const showNextBadge =
+    Boolean(nextBadge) && pathname.startsWith("/dashboard/badges");
 
   return (
     <>
@@ -148,6 +158,36 @@ export function Sidebar({
               </div>
               <div className="text-[11px] font-medium text-[#777c8a]">
                 {bestMonthPct ?? 0}% of goals met
+              </div>
+            </div>
+          ) : null}
+
+          {showNextBadge && nextBadge && !collapsed ? (
+            <div className="mb-3 rounded-2xl border border-white/[0.06] bg-[#15171c] p-[15px]">
+              <div className="mb-2.5 font-mono text-[10px] font-semibold tracking-[0.1em] text-[#6b7280]">
+                NEXT UP
+              </div>
+              <div className="mb-2.5 flex items-center gap-2.5">
+                <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full border-[1.5px] border-dashed border-[#2e323c] bg-[#191c22] font-mono text-[12px] font-bold text-[#454a56]">
+                  {nextBadge.mark}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-bold text-[#dfe1e6]">
+                    {nextBadge.label}
+                  </div>
+                  <div className="font-mono text-[10.5px] font-semibold text-[#6b7280]">
+                    {nextBadge.progress}
+                  </div>
+                </div>
+              </div>
+              <div className="h-[5px] overflow-hidden rounded-[3px] bg-[#1b1e25]">
+                <div
+                  className="h-full rounded-[3px]"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, nextBadge.pct))}%`,
+                    background: "linear-gradient(90deg,#fcd34d,#f59e0b)",
+                  }}
+                />
               </div>
             </div>
           ) : null}
