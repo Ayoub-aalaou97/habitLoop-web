@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BrandWordmark } from "@/components/BrandMark";
 import {
   BadgesIcon,
@@ -21,27 +22,47 @@ function iconClass(active: boolean) {
 const NAV_ITEMS: {
   label: string;
   href: string;
-  active: boolean;
+  match: (pathname: string) => boolean;
   icon: IconComponent;
 }[] = [
-  { label: "Dashboard", href: "/dashboard", active: true, icon: DashboardIcon },
-  { label: "Statistics", href: "#", active: false, icon: StatisticsIcon },
-  { label: "Badges", href: "#", active: false, icon: BadgesIcon },
-  { label: "Reminders", href: "#", active: false, icon: RemindersIcon },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    match: (pathname) =>
+      pathname === "/dashboard" || pathname.startsWith("/dashboard/habits"),
+    icon: DashboardIcon,
+  },
+  {
+    label: "Statistics",
+    href: "/dashboard/statistics",
+    match: (pathname) => pathname.startsWith("/dashboard/statistics"),
+    icon: StatisticsIcon,
+  },
+  { label: "Badges", href: "#", match: () => false, icon: BadgesIcon },
+  { label: "Reminders", href: "#", match: () => false, icon: RemindersIcon },
 ];
 
 export function Sidebar({
   userName,
   userPlanLabel,
   onLogout,
+  bestMonth,
+  bestMonthPct,
 }: {
   userName: string;
   userPlanLabel: string;
   onLogout: () => void;
+  bestMonth?: string;
+  bestMonthPct?: number;
 }) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const initial = userName.trim().charAt(0).toUpperCase() || "?";
   const widthClass = collapsed ? "w-[68px]" : "w-[232px]";
+  const showBestMonth =
+    Boolean(bestMonth) &&
+    bestMonth !== "—" &&
+    pathname.startsWith("/dashboard/statistics");
 
   return (
     <>
@@ -85,6 +106,7 @@ export function Sidebar({
         <nav className="scroll-area flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
+            const active = item.match(pathname);
             return (
               <Link
                 key={item.label}
@@ -95,16 +117,16 @@ export function Sidebar({
                     ? "h-10 w-10 justify-center self-center"
                     : "gap-3 px-3 py-2.5"
                 } ${
-                  item.active
+                  active
                     ? "bg-[rgba(111,123,255,0.14)] text-[#e8e9ff]"
                     : "text-[#878c99] hover:bg-white/[0.05] hover:text-[#d5d7de]"
                 }`}
               >
-                <Icon className={`flex-none ${iconClass(item.active)}`} />
+                <Icon className={`flex-none ${iconClass(active)}`} />
                 {collapsed ? null : (
                   <span
                     className={`text-[14px] ${
-                      item.active ? "font-semibold" : "font-medium"
+                      active ? "font-semibold" : "font-medium"
                     }`}
                   >
                     {item.label}
@@ -116,6 +138,20 @@ export function Sidebar({
         </nav>
 
         <div className="mt-3 border-t border-white/[0.06] pt-3">
+          {showBestMonth && !collapsed ? (
+            <div className="mb-3 rounded-2xl border border-white/[0.06] bg-[#15171c] p-[15px]">
+              <div className="mb-2 font-mono text-[10px] font-semibold tracking-[0.1em] text-[#6b7280]">
+                BEST MONTH
+              </div>
+              <div className="mb-0.5 text-[19px] font-bold text-[#eceef1]">
+                {bestMonth}
+              </div>
+              <div className="text-[11px] font-medium text-[#777c8a]">
+                {bestMonthPct ?? 0}% of goals met
+              </div>
+            </div>
+          ) : null}
+
           <div
             className={`flex items-center rounded-lg ${
               collapsed ? "justify-center py-1" : "gap-2.5 px-2 py-2"

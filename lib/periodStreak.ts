@@ -322,6 +322,25 @@ export function computePeriodStats(opts: {
   };
 }
 
+export function listPeriodSnapshots(opts: {
+  habit: HabitGoalSource & { created_at: string };
+  checkIns: ApiCheckIn[];
+  today?: Date;
+}): PeriodSnapshot[] {
+  const today = startOfDay(opts.today ?? new Date());
+  const goal = goalFromHabit(opts.habit);
+  const dates = uniqueCheckInDates(opts.checkIns);
+  const startedAt = startOfDay(new Date(opts.habit.created_at));
+  const origin = Number.isNaN(startedAt.getTime()) ? today : startedAt;
+  return listClosedAndCurrent(
+    goal.period,
+    goal.target,
+    dates,
+    origin,
+    today,
+  );
+}
+
 export function loopStatusForWeek(
   weekStartKey: string,
   statsHabit: Pick<
