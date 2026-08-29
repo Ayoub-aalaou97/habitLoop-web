@@ -172,9 +172,10 @@ export function habitGoalLabel(habit: ApiHabit): string {
 export function apiHabitToCard(
   habit: ApiHabit,
   checkIns: ApiCheckIn[] = [],
+  frozenPeriodKeys: string[] = [],
 ): DashboardHobby {
   const byDate = checkInsByDateMap(checkIns);
-  const stats = computePeriodStats({ habit, checkIns });
+  const stats = computePeriodStats({ habit, checkIns, frozenPeriodKeys });
   const done = Math.min(stats.periodTarget, stats.periodDone);
 
   return {

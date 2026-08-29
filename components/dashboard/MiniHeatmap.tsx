@@ -62,11 +62,16 @@ export function MiniHeatmap({
         {week.map((cell, idx) => {
           const isToday = cell.dateKey === todayKey;
           const isFuture = Boolean(cell.dateKey && cell.dateKey > todayKey);
+          const isPastChecked =
+            Boolean(cell.checked) &&
+            Boolean(cell.dateKey) &&
+            cell.dateKey < todayKey;
           const canClick =
             Boolean(onCellClick) &&
             Boolean(cell.dateKey) &&
             !cell.locked &&
-            !isFuture;
+            !isFuture &&
+            !isPastChecked;
           const label = cellLabel(cell, todayKey, canClick);
 
           return (

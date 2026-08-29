@@ -23,6 +23,7 @@ export type PeriodSnapshot = {
   target: number;
   satisfied: boolean;
   status: LoopStatus;
+  frozen?: boolean;
 };
 
 export type PeriodStats = {
@@ -172,18 +173,21 @@ function snapshotFor(
   dates: Set<string>,
   today: Date,
   startedAt: Date | null = null,
+  frozenKeys: Set<string> = new Set(),
 ): PeriodSnapshot | null {
   const periodStart = startOfPeriod(date, period);
   const periodEnd = endOfPeriod(date, period);
   const range = activeRange(periodStart, periodEnd, startedAt);
   if (!range) return null;
 
+  const key = periodKey(date, period);
   const periodTarget = Math.max(
     1,
     Math.min(target, daysInRange(range.start, range.end)),
   );
   const done = countInRange(dates, range.start, range.end);
-  const satisfied = done >= periodTarget;
+  const frozen = frozenKeys.has(key);
+  const satisfied = done >= periodTarget || frozen;
   const todayMs = today.getTime();
   let status: LoopStatus = "missed";
   if (range.start.getTime() > todayMs) status = "future";
@@ -194,13 +198,14 @@ function snapshotFor(
   }
 
   return {
-    key: periodKey(date, period),
+    key,
     startKey: toDateKey(range.start),
     endKey: toDateKey(range.end),
     done,
     target: periodTarget,
     satisfied,
     status,
+    frozen,
   };
 }
 
@@ -210,13 +215,22 @@ function listClosedAndCurrent(
   dates: Set<string>,
   startedAt: Date,
   today: Date,
+  frozenKeys: Set<string> = new Set(),
 ): PeriodSnapshot[] {
   const periods: PeriodSnapshot[] = [];
   let cursor = startOfPeriod(startedAt, period);
   const last = startOfPeriod(today, period);
 
   while (cursor.getTime() <= last.getTime()) {
-    const snap = snapshotFor(cursor, period, target, dates, today, startedAt);
+    const snap = snapshotFor(
+      cursor,
+      period,
+      target,
+      dates,
+      today,
+      startedAt,
+      frozenKeys,
+    );
     if (snap) periods.push(snap);
     cursor = shiftPeriod(cursor, period, 1);
   }
@@ -268,10 +282,12 @@ export function computePeriodStats(opts: {
   habit: HabitGoalSource & { created_at: string };
   checkIns: ApiCheckIn[];
   today?: Date;
+  frozenPeriodKeys?: string[];
 }): PeriodStats {
   const today = startOfDay(opts.today ?? new Date());
   const goal = goalFromHabit(opts.habit);
   const dates = uniqueCheckInDates(opts.checkIns);
+  const frozenKeys = new Set(opts.frozenPeriodKeys ?? []);
   const startedAt = startOfDay(new Date(opts.habit.created_at));
   const origin = Number.isNaN(startedAt.getTime()) ? today : startedAt;
 
@@ -281,6 +297,7 @@ export function computePeriodStats(opts: {
     dates,
     origin,
     today,
+    frozenKeys,
   );
   const current = periods[periods.length - 1];
   const closed = periods.filter(
@@ -326,10 +343,12 @@ export function listPeriodSnapshots(opts: {
   habit: HabitGoalSource & { created_at: string };
   checkIns: ApiCheckIn[];
   today?: Date;
+  frozenPeriodKeys?: string[];
 }): PeriodSnapshot[] {
   const today = startOfDay(opts.today ?? new Date());
   const goal = goalFromHabit(opts.habit);
   const dates = uniqueCheckInDates(opts.checkIns);
+  const frozenKeys = new Set(opts.frozenPeriodKeys ?? []);
   const startedAt = startOfDay(new Date(opts.habit.created_at));
   const origin = Number.isNaN(startedAt.getTime()) ? today : startedAt;
   return listClosedAndCurrent(
@@ -338,6 +357,7 @@ export function listPeriodSnapshots(opts: {
     dates,
     origin,
     today,
+    frozenKeys,
   );
 }
 
@@ -349,6 +369,7 @@ export function loopStatusForWeek(
   >,
   checkIns: ApiCheckIn[],
   today?: Date,
+  frozenPeriodKeys: string[] = [],
 ): LoopStatus | null {
   const goal = goalFromHabit(statsHabit);
   if (goal.period !== "week") return null;
@@ -363,6 +384,7 @@ export function loopStatusForWeek(
     dates,
     startOfDay(today ?? new Date()),
     startedAt && !Number.isNaN(startedAt.getTime()) ? startedAt : null,
+    new Set(frozenPeriodKeys),
   );
   return snap?.status ?? null;
 }
@@ -376,6 +398,7 @@ export function loopStatusForMonth(
   >,
   checkIns: ApiCheckIn[],
   today?: Date,
+  frozenPeriodKeys: string[] = [],
 ): LoopStatus | null {
   const goal = goalFromHabit(statsHabit);
   if (goal.period !== "month") return null;
@@ -390,6 +413,7 @@ export function loopStatusForMonth(
     dates,
     startOfDay(today ?? new Date()),
     startedAt && !Number.isNaN(startedAt.getTime()) ? startedAt : null,
+    new Set(frozenPeriodKeys),
   );
   return snap?.status ?? null;
 }

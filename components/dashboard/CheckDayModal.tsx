@@ -9,6 +9,7 @@ import {
   toDateKey,
 } from "@/lib/checkIn";
 import { habitColorWithAlpha } from "@/lib/habitDetailMock";
+import { periodNoun, type HabitPeriod } from "@/lib/periodStreak";
 import { SheetPortal } from "@/components/dashboard/SheetPortal";
 
 const DOW = ["S", "M", "T", "W", "T", "F", "S"];
@@ -19,6 +20,7 @@ type CheckDayModalProps = {
   habitColor: string;
   habitId: number;
   streak?: number;
+  streakUnit?: HabitPeriod;
   freezesRemaining?: number;
   /** Real completed days from API (YYYY-MM-DD). */
   loggedDateKeys?: Set<string>;
@@ -34,6 +36,7 @@ export function CheckDayModal({
   habitColor,
   habitId: _habitId,
   streak = 0,
+  streakUnit = "day",
   freezesRemaining = 3,
   loggedDateKeys,
   createdDateKey = null,
@@ -112,16 +115,30 @@ export function CheckDayModal({
     selectedKey !== null &&
     selectedKey < toDateKey(today) &&
     !selectedIsLocked;
+  const selectedIsLogged = Boolean(
+    selectedKey && loggedKeys.has(selectedKey),
+  );
   const canLog =
     selectedKey !== null &&
     !selectedIsLocked &&
-    (selectedIsToday || (selectedIsPast && freezesRemaining > 0));
+    ((selectedIsToday && selectedIsLogged) ||
+      (!selectedIsLogged &&
+        (selectedIsToday || (selectedIsPast && freezesRemaining > 0))));
+  const pastLockedNoFreeze =
+    selectedIsPast && !selectedIsLogged && freezesRemaining < 1;
+  const pastLoggedLocked = selectedIsPast && selectedIsLogged;
 
   const selectedLabel = selectedKey ? formatSelectedDay(selectedKey) : "—";
   const ctaLabel = selectedKey
-    ? selectedIsToday
-      ? `Log ${formatLogButtonDate(selectedKey)}`
-      : `Log ${formatLogButtonDate(selectedKey)} · restores your streak`
+    ? pastLoggedLocked
+      ? "Already logged"
+      : pastLockedNoFreeze
+        ? "No freezes left"
+        : selectedIsToday && selectedIsLogged
+          ? `Edit ${formatLogButtonDate(selectedKey)}`
+          : selectedIsToday
+            ? `Log ${formatLogButtonDate(selectedKey)}`
+            : `Log ${formatLogButtonDate(selectedKey)} · restores your streak`
     : "Select a day";
 
   function shiftMonth(delta: number) {
@@ -212,11 +229,23 @@ export function CheckDayModal({
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {cells.map((cell) => {
           const style = dayStyle(cell.status);
+          const todayKey = toDateKey(today);
+          const isPastMissed =
+            cell.date !== null &&
+            cell.status === "missed" &&
+            cell.date < todayKey;
+          const isPastLogged =
+            cell.date !== null &&
+            cell.status === "logged" &&
+            cell.date < todayKey;
+          const freezeLocked = isPastMissed && freezesRemaining < 1;
           const disabled =
             !cell.date ||
             cell.status === "future" ||
             cell.status === "empty" ||
-            cell.status === "locked";
+            cell.status === "locked" ||
+            freezeLocked ||
+            isPastLogged;
 
           return (
             <button
@@ -226,7 +255,11 @@ export function CheckDayModal({
               title={
                 cell.status === "locked"
                   ? "Locked · before this habit existed"
-                  : undefined
+                  : isPastLogged
+                    ? "Past check-ins can’t be changed"
+                    : freezeLocked
+                      ? "No freezes left · past days locked"
+                      : undefined
               }
               onClick={() => {
                 if (cell.date) setSelectedKey(cell.date);
@@ -397,8 +430,9 @@ export function CheckDayModal({
             {selectedCard}
             {selectedIsPast ? (
               <p className="mt-3 text-[12px] font-medium leading-relaxed text-[#777c8a]">
-                Logging a past day spends a freeze to keep your {streak}-day
-                streak unbroken. {freezesRemaining} left after this.
+                {freezesRemaining < 1
+                  ? "No freezes left — past days stay locked. You can still log today."
+                  : `Logging a past day spends a freeze to keep your ${streak}-${periodNoun(streakUnit, streak)} streak unbroken. ${freezesRemaining} left after this.`}
               </p>
             ) : null}
           </div>
@@ -477,8 +511,9 @@ export function CheckDayModal({
             <div className="mb-6 flex flex-col gap-3">{legend}</div>
             {selectedCard}
             <p className="mt-3.5 text-[12px] font-medium leading-relaxed text-[#777c8a]">
-              Logging a past day spends a freeze to keep your {streak}-day streak
-              unbroken.
+              {freezesRemaining < 1
+                ? "No freezes left — past days stay locked. You can still log today."
+                : `Logging a past day spends a freeze to keep your ${streak}-${periodNoun(streakUnit, streak)} streak unbroken.`}
             </p>
 
             <div className="mt-auto flex flex-col gap-2.5 pt-[22px]">
@@ -495,9 +530,7 @@ export function CheckDayModal({
                   boxShadow: `0 8px 22px -6px ${habitColorWithAlpha(habitColor, 0.55)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                 }}
               >
-                {selectedKey
-                  ? `Log ${formatLogButtonDate(selectedKey)}`
-                  : "Select a day"}
+                {ctaLabel}
               </button>
               <button
                 type="button"

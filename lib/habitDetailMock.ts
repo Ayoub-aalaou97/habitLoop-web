@@ -92,8 +92,15 @@ function generateActivityFromCheckIns(opts: {
   checkInsByDate: Map<string, ApiCheckIn>;
   habit: ApiHabit;
   checkIns: ApiCheckIn[];
+  frozenPeriodKeys?: string[];
 }): { weeks: ActivityWeek[]; sessions: number } {
-  const { colorHex, checkInsByDate, habit, checkIns } = opts;
+  const {
+    colorHex,
+    checkInsByDate,
+    habit,
+    checkIns,
+    frozenPeriodKeys = [],
+  } = opts;
   const rgb = hexToRgb(colorHex);
   const period = goalFromHabit(habit).period;
   const createdKey = habit.created_at.slice(0, 10);
@@ -174,9 +181,22 @@ function generateActivityFromCheckIns(opts: {
 
     let loopStatus: ActivityWeek["loopStatus"] = null;
     if (period === "week" && weekStartKey) {
-      loopStatus = loopStatusForWeek(weekStartKey, habit, checkIns, today);
+      loopStatus = loopStatusForWeek(
+        weekStartKey,
+        habit,
+        checkIns,
+        today,
+        frozenPeriodKeys,
+      );
     } else if (period === "month" && label && labelMonth >= 0) {
-      loopStatus = loopStatusForMonth(year, labelMonth, habit, checkIns, today);
+      loopStatus = loopStatusForMonth(
+        year,
+        labelMonth,
+        habit,
+        checkIns,
+        today,
+        frozenPeriodKeys,
+      );
     }
 
     weeks.push({ label, days, loopStatus });
@@ -290,6 +310,7 @@ function monthlyFromCheckIns(
 export function buildHabitDetailView(
   habit: ApiHabit,
   checkIns: ApiCheckIn[] = [],
+  frozenPeriodKeys: string[] = [],
 ): HabitDetailView {
   const checkInsByDate = new Map<string, ApiCheckIn>();
   for (const item of checkIns) {
@@ -306,9 +327,10 @@ export function buildHabitDetailView(
     checkInsByDate,
     habit,
     checkIns,
+    frozenPeriodKeys,
   });
 
-  const stats = computePeriodStats({ habit, checkIns });
+  const stats = computePeriodStats({ habit, checkIns, frozenPeriodKeys });
 
   const recent = [...checkIns]
     .sort((a, b) => {

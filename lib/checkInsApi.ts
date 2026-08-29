@@ -8,12 +8,27 @@ export type ApiCheckIn = {
   note: string | null;
   created_at: string;
   updated_at: string;
+  freeze?: {
+    remaining: number;
+    total: number;
+    spent: boolean;
+    period_key: string | null;
+  };
 };
 
 export type CreateCheckInPayload = {
   date: string;
   mood: number;
   note?: string | null;
+};
+
+export type CreateCheckInResult = ApiCheckIn & {
+  freeze?: {
+    remaining: number;
+    total: number;
+    spent: boolean;
+    period_key: string | null;
+  };
 };
 
 function authHeaders(): HeadersInit {
@@ -63,7 +78,7 @@ export async function fetchHabitCheckIns(
 export async function createHabitCheckIn(
   habitId: number,
   payload: CreateCheckInPayload,
-): Promise<ApiCheckIn> {
+): Promise<CreateCheckInResult> {
   const res = await fetch(`${API_URL}/api/habits/${habitId}/check-ins`, {
     method: "POST",
     headers: authHeaders(),
@@ -74,7 +89,7 @@ export async function createHabitCheckIn(
     throw new Error(await readApiError(res));
   }
 
-  const item = (await res.json()) as ApiCheckIn;
+  const item = (await res.json()) as CreateCheckInResult;
   return {
     ...item,
     date: normalizeCheckInDate(item.date),

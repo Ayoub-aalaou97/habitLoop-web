@@ -9,6 +9,7 @@ import {
   toDateKey,
 } from "@/lib/checkIn";
 import { habitColorWithAlpha } from "@/lib/habitDetailMock";
+import { periodNoun, type HabitPeriod } from "@/lib/periodStreak";
 import { SheetPortal } from "@/components/dashboard/SheetPortal";
 
 export type CheckInHabitOption = {
@@ -26,6 +27,7 @@ type LogSessionModalProps = {
   initialNote?: string | null;
   mode?: "create" | "edit";
   streakByHabitId?: Record<number, number>;
+  streakUnitByHabitId?: Record<number, HabitPeriod>;
   freezesRemaining?: number;
   onClose: () => void;
   onSubmit?: (draft: CheckInDraft) => void | Promise<void>;
@@ -41,6 +43,7 @@ export function LogSessionModal({
   initialNote = null,
   mode = "create",
   streakByHabitId = {},
+  streakUnitByHabitId = {},
   freezesRemaining = 3,
   onClose,
   onSubmit,
@@ -95,6 +98,10 @@ export function LogSessionModal({
 
   const color = selectedHabit?.color ?? "#38bdf8";
   const streak = selectedHabit ? (streakByHabitId[selectedHabit.id] ?? 0) : 0;
+  const streakUnit: HabitPeriod = selectedHabit
+    ? (streakUnitByHabitId[selectedHabit.id] ?? "day")
+    : "day";
+  const streakUnitLabel = periodNoun(streakUnit, streak);
   const isBackfill = dateKey < todayKey;
   const moodLabel = MOODS.find((m) => m.n === mood)?.label ?? "";
 
@@ -102,6 +109,10 @@ export function LogSessionModal({
     event?.preventDefault();
     if (!habitId || !selectedHabit) {
       setError("Pick a habit to log.");
+      return;
+    }
+    if (!isEdit && isBackfill && freezesRemaining < 1) {
+      setError("No streak freezes left. You can only log today.");
       return;
     }
 
@@ -160,7 +171,7 @@ export function LogSessionModal({
     if (loading) return "Saving…";
     if (isEdit) return "Save changes";
     if (isBackfill) return `Log session for ${formatLogButtonDate(dateKey)}`;
-    return `Log session · keeps your ${streak}-day streak`;
+    return `Log session · keeps your ${streak}-${streakUnitLabel} streak`;
   })();
 
   function moodButtonStyle(n: number) {
@@ -343,10 +354,16 @@ export function LogSessionModal({
                 <div className="h-[13px] w-[10px] rounded-[3px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8]" />
               </div>
               <p className="m-0 text-[12.5px] font-medium leading-snug text-[#f6a9b6]">
-                Logging {formatLogButtonDate(dateKey)} spends{" "}
-                <span className="font-bold text-[#fb7185]">1 freeze token</span>{" "}
-                — your {streak}-day streak stays intact. {Math.max(0, freezesRemaining - 1)}{" "}
-                left after this.
+                {freezesRemaining < 1
+                  ? "No freezes left — you can’t log past days. Log today instead."
+                  : (
+                    <>
+                      Logging {formatLogButtonDate(dateKey)} spends{" "}
+                      <span className="font-bold text-[#fb7185]">1 freeze token</span>{" "}
+                      — your {streak}-{streakUnitLabel} streak stays intact.{" "}
+                      {Math.max(0, freezesRemaining - 1)} left after this.
+                    </>
+                  )}
               </p>
             </div>
           ) : null}
@@ -362,7 +379,11 @@ export function LogSessionModal({
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <button
               type="submit"
-              disabled={busy || !habitId}
+              disabled={
+                busy ||
+                !habitId ||
+                (!isEdit && isBackfill && freezesRemaining < 1)
+              }
               className="order-1 w-full flex-1 rounded-[14px] py-4 text-center text-[15px] font-bold disabled:opacity-50 sm:order-2 sm:py-[15px]"
               style={{
                 background: `linear-gradient(180deg,${habitColorWithAlpha(color, 0.95)},${habitColorWithAlpha(color, 0.7)})`,
@@ -381,7 +402,7 @@ export function LogSessionModal({
               Cancel
             </button>
           </div>
-          {isEdit && onRemove ? (
+          {isEdit && onRemove && !isBackfill ? (
             <button
               type="button"
               disabled={busy}

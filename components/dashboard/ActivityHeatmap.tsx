@@ -221,12 +221,17 @@ export function ActivityHeatmap({
                       const isFuture = Boolean(
                         day.dateKey && day.dateKey > todayKey,
                       );
+                      const isPastChecked =
+                        Boolean(day.checked) &&
+                        Boolean(day.dateKey) &&
+                        day.dateKey < todayKey;
                       const canClick =
                         Boolean(onDayClick) &&
                         Boolean(day.dateKey) &&
                         !isEmpty &&
                         !day.locked &&
-                        !isFuture;
+                        !isFuture &&
+                        !isPastChecked;
 
                       return (
                         <div

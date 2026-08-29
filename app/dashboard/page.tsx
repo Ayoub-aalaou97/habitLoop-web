@@ -26,6 +26,12 @@ import {
   deleteHabitCheckIn,
   fetchHabitCheckIns,
 } from "@/lib/checkInsApi";
+import {
+  fetchFreezes,
+  frozenKeysForHabit,
+  FreezesResponse,
+} from "@/lib/freezesApi";
+import { goalFromHabit, type HabitPeriod } from "@/lib/periodStreak";
 import { LoadingSpinner, PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { HobbyCard } from "@/components/dashboard/HobbyCard";
@@ -54,6 +60,7 @@ export default function DashboardPage() {
   const [checkInsByHabit, setCheckInsByHabit] = useState<
     Record<number, ApiCheckIn[]>
   >({});
+  const [freezes, setFreezes] = useState<FreezesResponse | null>(null);
   const [habitsLoading, setHabitsLoading] = useState(true);
   const [habitsError, setHabitsError] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
@@ -66,8 +73,14 @@ export default function DashboardPage() {
     setHabitsError(null);
 
     try {
-      const next = await fetchHabits();
+      const [next, nextFreezes] = await Promise.all([
+        fetchHabits(),
+        fetchFreezes().catch((): FreezesResponse | null => null),
+      ]);
       setHabits(next);
+      setFreezes(
+        nextFreezes ?? { remaining: 0, total: 3, by_habit: {} },
+      );
 
       const pairs = await Promise.all(
         next.map(async (habit) => {
@@ -187,6 +200,13 @@ export default function DashboardPage() {
     if (cell.locked) return;
     if (cell.dateKey < habit.created_at.slice(0, 10)) return;
 
+    const todayKey = toDateKey(new Date());
+    // Past logged days are locked — only today can be edited.
+    if (cell.checked && cell.dateKey !== todayKey) return;
+    if (!cell.checked && cell.dateKey < todayKey && (freezes?.remaining ?? 0) < 1) {
+      return;
+    }
+
     setLogHabitId(habit.id);
     setLogDateKey(cell.dateKey);
     setLogMode(cell.checked ? "edit" : "create");
@@ -206,6 +226,16 @@ export default function DashboardPage() {
     if (draft.date < habit.created_at.slice(0, 10)) {
       throw new Error("You cannot check in before this habit was created.");
     }
+    const todayKey = toDateKey(new Date());
+    if (draft.date < todayKey && (freezes?.remaining ?? 0) < 1) {
+      throw new Error("No streak freezes left. You can only log today.");
+    }
+    const existing = (checkInsByHabit[habit.id] ?? []).find(
+      (item) => item.date === draft.date,
+    );
+    if (existing && draft.date !== todayKey) {
+      throw new Error("Past check-ins can’t be changed.");
+    }
 
     const created = await createHabitCheckIn(habit.id, {
       date: draft.date,
@@ -218,10 +248,33 @@ export default function DashboardPage() {
       const withoutSameDay = list.filter((item) => item.date !== created.date);
       return { ...prev, [habit.id]: [created, ...withoutSameDay] };
     });
+
+    if (created.freeze) {
+      const freeze = created.freeze;
+      setFreezes((prev) => {
+        const base = prev ?? { remaining: 0, total: freeze.total, by_habit: {} };
+        const keys = frozenKeysForHabit(base.by_habit, habit.id);
+        const nextKeys =
+          freeze.period_key && !keys.includes(freeze.period_key)
+            ? [...keys, freeze.period_key]
+            : keys;
+        return {
+          remaining: freeze.remaining,
+          total: freeze.total,
+          by_habit: {
+            ...base.by_habit,
+            [String(habit.id)]: nextKeys,
+          },
+        };
+      });
+    }
   }
 
   async function handleRemoveCheckIn() {
     if (!logHabitId || !logDateKey) return;
+    if (logDateKey !== toDateKey(new Date())) {
+      throw new Error("Only today's check-in can be removed.");
+    }
 
     const list = checkInsByHabit[logHabitId] ?? [];
     const existing = list.find((item) => item.date === logDateKey);
@@ -241,9 +294,13 @@ export default function DashboardPage() {
   const habitCards = useMemo(
     () =>
       habits.map((habit) =>
-        apiHabitToCard(habit, checkInsByHabit[habit.id] ?? []),
+        apiHabitToCard(
+          habit,
+          checkInsByHabit[habit.id] ?? [],
+          frozenKeysForHabit(freezes?.by_habit ?? {}, habit.id),
+        ),
       ),
-    [habits, checkInsByHabit],
+    [habits, checkInsByHabit, freezes?.by_habit],
   );
 
   const dashboardStats = useMemo(() => {
@@ -341,6 +398,14 @@ export default function DashboardPage() {
     return map;
   }, [habits, habitCards]);
 
+  const streakUnitByHabitId = useMemo(() => {
+    const map: Record<number, HabitPeriod> = {};
+    for (const habit of habits) {
+      map[habit.id] = goalFromHabit(habit).period;
+    }
+    return map;
+  }, [habits]);
+
   if (error) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 bg-bg p-8">
@@ -357,7 +422,10 @@ export default function DashboardPage() {
   }
 
   const displayName = `${user.first_name} ${user.last_name}`;
-  const freezesRemaining = dashboardMock.stats.freezesTotal;
+  const freezesReady = freezes !== null;
+  const freezesRemaining = freezes?.remaining ?? 0;
+  const freezesTotal = freezes?.total ?? 3;
+  const freezePips = freezesReady ? freezesRemaining : 0;
 
   return (
     <div className="flex min-h-dvh bg-bg">
@@ -383,12 +451,16 @@ export default function DashboardPage() {
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div
                   key={`m-${idx}`}
-                  className="h-[12px] w-[9px] rounded-[2px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8]"
+                  className={
+                    freezesReady && idx < freezePips
+                      ? "h-[12px] w-[9px] rounded-[2px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8]"
+                      : "h-[12px] w-[9px] rounded-[2px] bg-white/[0.06]"
+                  }
                 />
               ))}
             </div>
             <span className="font-mono text-[13px] font-extrabold text-[#cfe9fb]">
-              {freezesRemaining}
+              {freezesReady ? freezesRemaining : "—"}
             </span>
           </div>
         </div>
@@ -410,12 +482,16 @@ export default function DashboardPage() {
                   {Array.from({ length: 3 }).map((_, idx) => (
                     <div
                       key={`fi-${idx}`}
-                      className="h-[14px] w-[11px] rounded-[3px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+                      className={
+                        freezesReady && idx < freezePips
+                          ? "h-[14px] w-[11px] rounded-[3px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+                          : "h-[14px] w-[11px] rounded-[3px] bg-white/[0.06]"
+                      }
                     />
                   ))}
                 </div>
                 <span className="font-mono text-[13px] font-semibold text-[#cfe9fb]">
-                  {freezesRemaining} freezes
+                  {freezesReady ? `${freezesRemaining} freezes` : "— freezes"}
                 </span>
               </div>
 
@@ -537,8 +613,9 @@ export default function DashboardPage() {
 
             <div className="flex flex-col gap-[16px]">
               <StreakFreezesCard
-                total={dashboardMock.stats.freezesTotal}
-                remaining={dashboardMock.stats.freezesTotal}
+                total={freezesTotal}
+                remaining={freezesRemaining}
+                loading={!freezesReady}
               />
               <ConsistencyChart months={dashboardMock.consistencyMonthly} />
             </div>
@@ -621,10 +698,15 @@ export default function DashboardPage() {
           initialNote={editingCheckIn?.note ?? null}
           mode={logMode}
           streakByHabitId={streakByHabitId}
-          freezesRemaining={3}
+          streakUnitByHabitId={streakUnitByHabitId}
+          freezesRemaining={freezesRemaining}
           onClose={closeLogModal}
           onSubmit={handleLogSession}
-          onRemove={logMode === "edit" ? handleRemoveCheckIn : undefined}
+          onRemove={
+            logMode === "edit" && logDateKey === toDateKey(new Date())
+              ? handleRemoveCheckIn
+              : undefined
+          }
         />
       ) : null}
     </div>
