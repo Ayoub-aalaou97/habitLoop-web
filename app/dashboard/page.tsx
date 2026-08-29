@@ -26,6 +26,7 @@ import {
   deleteHabitCheckIn,
   fetchHabitCheckIns,
 } from "@/lib/checkInsApi";
+import { LoadingSpinner, PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { HobbyCard } from "@/components/dashboard/HobbyCard";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
@@ -352,11 +353,7 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return (
-      <main className="flex flex-1 items-center justify-center bg-bg p-8">
-        <p className="text-text-muted">Loading…</p>
-      </main>
-    );
+    return <PageLoader label="Loading dashboard…" />;
   }
 
   const displayName = `${user.first_name} ${user.last_name}`;
@@ -505,7 +502,9 @@ export default function DashboardPage() {
               ) : null}
 
               {habitsLoading ? (
-                <p className="text-[14px] text-text-muted">Loading habits…</p>
+                <div className="flex justify-center py-12">
+                  <LoadingSpinner size="md" label="Loading habits…" />
+                </div>
               ) : habits.length === 0 ? (
                 <div className="rounded-[16px] border border-dashed border-white/[0.1] bg-bg-elevated px-5 py-8 text-center">
                   <p className="mb-3 text-[14px] text-text-muted">
@@ -555,7 +554,9 @@ export default function DashboardPage() {
             ) : null}
 
             {habitsLoading ? (
-              <p className="text-[14px] text-text-muted">Loading habits…</p>
+              <div className="flex justify-center py-10">
+                <LoadingSpinner size="md" label="Loading habits…" />
+              </div>
             ) : habits.length === 0 ? (
               <div className="rounded-[16px] border border-dashed border-white/[0.1] bg-bg-elevated px-5 py-8 text-center">
                 <p className="mb-3 text-[14px] text-text-muted">

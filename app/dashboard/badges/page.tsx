@@ -13,6 +13,7 @@ import {
 import { ApiHabit, fetchHabits } from "@/lib/habits";
 import { ApiCheckIn, fetchHabitCheckIns } from "@/lib/checkInsApi";
 import { BadgeItem, buildBadgesView } from "@/lib/badges";
+import { PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
@@ -180,11 +181,7 @@ export default function BadgesPage() {
   }
 
   if (!user || loading) {
-    return (
-      <main className="flex flex-1 items-center justify-center bg-bg p-8">
-        <p className="text-text-muted">Loading…</p>
-      </main>
-    );
+    return <PageLoader label="Loading badges…" />;
   }
 
   const displayName = `${user.first_name} ${user.last_name}`;

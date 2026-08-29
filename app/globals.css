@@ -91,3 +91,20 @@ button {
 .scroll-area::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.24);
 }
+
+@keyframes hl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hl-spinner {
+  animation: hl-spin 1.05s linear infinite;
+  filter: drop-shadow(0 0 14px rgba(111, 123, 255, 0.28));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-spinner {
+    animation: none;
+  }
+}
