@@ -36,15 +36,25 @@ function uniqueSessionCount(checkIns: ApiCheckIn[]): number {
   return keys.size;
 }
 
+function frozenKeys(
+  frozenByHabit: Record<string, string[]> | undefined,
+  habitId: number,
+): string[] {
+  if (!frozenByHabit) return [];
+  return frozenByHabit[String(habitId)] ?? frozenByHabit[habitId as unknown as string] ?? [];
+}
+
 function maxLongestStreak(
   habits: ApiHabit[],
   checkInsByHabit: Record<number, ApiCheckIn[]>,
+  frozenByHabit?: Record<string, string[]>,
 ): number {
   let max = 0;
   for (const habit of habits) {
     const stats = computePeriodStats({
       habit,
       checkIns: checkInsByHabit[habit.id] ?? [],
+      frozenPeriodKeys: frozenKeys(frozenByHabit, habit.id),
     });
     max = Math.max(max, stats.longestStreak);
   }
@@ -55,12 +65,14 @@ function maxLongestStreak(
 function maxConsecutiveSatisfiedPeriods(
   habits: ApiHabit[],
   checkInsByHabit: Record<number, ApiCheckIn[]>,
+  frozenByHabit?: Record<string, string[]>,
 ): number {
   let best = 0;
   for (const habit of habits) {
     const periods = listPeriodSnapshots({
       habit,
       checkIns: checkInsByHabit[habit.id] ?? [],
+      frozenPeriodKeys: frozenKeys(frozenByHabit, habit.id),
     }).filter(
       (item) => item.status === "satisfied" || item.status === "missed",
     );
@@ -81,6 +93,7 @@ function maxConsecutiveSatisfiedPeriods(
 function bestPerfectMonthProgress(
   habits: ApiHabit[],
   checkInsByHabit: Record<number, ApiCheckIn[]>,
+  frozenByHabit?: Record<string, string[]>,
 ): { have: number; need: number } {
   const byMonth = new Map<string, { sat: number; total: number }>();
 
@@ -88,6 +101,7 @@ function bestPerfectMonthProgress(
     const periods = listPeriodSnapshots({
       habit,
       checkIns: checkInsByHabit[habit.id] ?? [],
+      frozenPeriodKeys: frozenKeys(frozenByHabit, habit.id),
     });
     for (const period of periods) {
       if (period.status !== "satisfied" && period.status !== "missed") continue;
@@ -134,17 +148,26 @@ function formatProgress(have: number, need: number, unit?: string): string {
 export function buildBadgesView(opts: {
   habits: ApiHabit[];
   checkInsByHabit: Record<number, ApiCheckIn[]>;
+  frozenByHabit?: Record<string, string[]>;
 }): BadgesView {
-  const { habits, checkInsByHabit } = opts;
+  const { habits, checkInsByHabit, frozenByHabit } = opts;
 
   let totalSessions = 0;
   for (const habit of habits) {
     totalSessions += uniqueSessionCount(checkInsByHabit[habit.id] ?? []);
   }
 
-  const longest = maxLongestStreak(habits, checkInsByHabit);
-  const consecutive = maxConsecutiveSatisfiedPeriods(habits, checkInsByHabit);
-  const perfect = bestPerfectMonthProgress(habits, checkInsByHabit);
+  const longest = maxLongestStreak(habits, checkInsByHabit, frozenByHabit);
+  const consecutive = maxConsecutiveSatisfiedPeriods(
+    habits,
+    checkInsByHabit,
+    frozenByHabit,
+  );
+  const perfect = bestPerfectMonthProgress(
+    habits,
+    checkInsByHabit,
+    frozenByHabit,
+  );
 
   const defs: Array<{
     id: string;

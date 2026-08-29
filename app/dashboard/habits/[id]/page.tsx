@@ -43,6 +43,11 @@ import {
   deleteHabitCheckIn,
   fetchHabitCheckIns,
 } from "@/lib/checkInsApi";
+import {
+  fetchFreezes,
+  frozenKeysForHabit,
+  FreezesResponse,
+} from "@/lib/freezesApi";
 
 function StatCard({
   label,
@@ -106,18 +111,23 @@ export default function HabitDetailPage() {
   const [logDateKey, setLogDateKey] = useState<string | null>(null);
   const [logMode, setLogMode] = useState<"create" | "edit">("create");
   const [checkIns, setCheckIns] = useState<ApiCheckIn[]>([]);
+  const [freezes, setFreezes] = useState<FreezesResponse | null>(null);
 
   const loadHabit = useCallback(async (id: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      const [next, nextCheckIns] = await Promise.all([
+      const [next, nextCheckIns, nextFreezes] = await Promise.all([
         fetchHabit(id),
         fetchHabitCheckIns(id),
+        fetchFreezes().catch((): FreezesResponse | null => null),
       ]);
       setHabit(next);
       setCheckIns(nextCheckIns);
+      setFreezes(
+        nextFreezes ?? { remaining: 0, total: 3, by_habit: {} },
+      );
     } catch (err) {
       setHabit(null);
       setCheckIns([]);
@@ -154,8 +164,15 @@ export default function HabitDetailPage() {
   }, [router, habitId, loadHabit]);
 
   const detail = useMemo(
-    () => (habit ? buildHabitDetailView(habit, checkIns) : null),
-    [habit, checkIns],
+    () =>
+      habit
+        ? buildHabitDetailView(
+            habit,
+            checkIns,
+            frozenKeysForHabit(freezes?.by_habit ?? {}, habit.id),
+          )
+        : null,
+    [habit, checkIns, freezes?.by_habit],
   );
 
   async function logout() {
@@ -207,9 +224,15 @@ export default function HabitDetailPage() {
 
   function openLogForDate(dateKey: string, mode?: "create" | "edit") {
     if (habit && dateKey < habit.created_at.slice(0, 10)) return;
+    const todayKey = toDateKey(new Date());
     const resolvedMode =
       mode ??
       (checkIns.some((item) => item.date === dateKey) ? "edit" : "create");
+    // Past logged days are locked — only today can be edited.
+    if (resolvedMode === "edit" && dateKey !== todayKey) return;
+    if (resolvedMode === "create" && dateKey < todayKey && (freezes?.remaining ?? 0) < 1) {
+      return;
+    }
     setLogMode(resolvedMode);
     setLogDateKey(dateKey);
     setCheckDayOpen(false);
@@ -222,6 +245,11 @@ export default function HabitDetailPage() {
     locked?: boolean;
   }) {
     if (day.locked) return;
+    const todayKey = toDateKey(new Date());
+    if (day.checked && day.dateKey !== todayKey) return;
+    if (!day.checked && day.dateKey < todayKey && (freezes?.remaining ?? 0) < 1) {
+      return;
+    }
     openLogForDate(day.dateKey, day.checked ? "edit" : "create");
   }
 
@@ -229,6 +257,14 @@ export default function HabitDetailPage() {
     if (!habit) return;
     if (draft.date < habit.created_at.slice(0, 10)) {
       throw new Error("You cannot check in before this habit was created.");
+    }
+    const todayKey = toDateKey(new Date());
+    if (draft.date < todayKey && (freezes?.remaining ?? 0) < 1) {
+      throw new Error("No streak freezes left. You can only log today.");
+    }
+    const existing = checkIns.find((item) => item.date === draft.date);
+    if (existing && draft.date !== todayKey) {
+      throw new Error("Past check-ins can’t be changed.");
     }
 
     const created = await createHabitCheckIn(habit.id, {
@@ -241,10 +277,33 @@ export default function HabitDetailPage() {
       const withoutSameDay = prev.filter((item) => item.date !== created.date);
       return [created, ...withoutSameDay];
     });
+
+    if (created.freeze) {
+      const freeze = created.freeze;
+      setFreezes((prev) => {
+        const base = prev ?? { remaining: 0, total: freeze.total, by_habit: {} };
+        const keys = frozenKeysForHabit(base.by_habit, habit.id);
+        const nextKeys =
+          freeze.period_key && !keys.includes(freeze.period_key)
+            ? [...keys, freeze.period_key]
+            : keys;
+        return {
+          remaining: freeze.remaining,
+          total: freeze.total,
+          by_habit: {
+            ...base.by_habit,
+            [String(habit.id)]: nextKeys,
+          },
+        };
+      });
+    }
   }
 
   async function handleRemoveCheckIn() {
     if (!habit || !logDateKey) return;
+    if (logDateKey !== toDateKey(new Date())) {
+      throw new Error("Only today's check-in can be removed.");
+    }
 
     const existing = checkIns.find((item) => item.date === logDateKey);
     if (!existing) {
@@ -591,7 +650,8 @@ export default function HabitDetailPage() {
         habitName={habit.name}
         habitColor={habit.color}
         streak={detail.currentStreak}
-        freezesRemaining={3}
+        streakUnit={detail.streakUnit}
+        freezesRemaining={freezes?.remaining ?? 0}
         loggedDateKeys={detail.loggedDateKeys}
         createdDateKey={habit.created_at.slice(0, 10)}
         onClose={() => setCheckDayOpen(false)}
@@ -607,14 +667,19 @@ export default function HabitDetailPage() {
         initialNote={editingCheckIn?.note ?? null}
         mode={logMode}
         streakByHabitId={{ [habit.id]: detail.currentStreak }}
-        freezesRemaining={3}
+        streakUnitByHabitId={{ [habit.id]: detail.streakUnit }}
+        freezesRemaining={freezes?.remaining ?? 0}
         onClose={() => {
           setLogOpen(false);
           setLogDateKey(null);
           setLogMode("create");
         }}
         onSubmit={handleLogSession}
-        onRemove={logMode === "edit" ? handleRemoveCheckIn : undefined}
+        onRemove={
+          logMode === "edit" && logDateKey === toDateKey(new Date())
+            ? handleRemoveCheckIn
+            : undefined
+        }
       />
 
       <ConfirmDialog

@@ -12,6 +12,10 @@ import {
 } from "@/lib/auth";
 import { ApiHabit, fetchHabits } from "@/lib/habits";
 import { ApiCheckIn, fetchHabitCheckIns } from "@/lib/checkInsApi";
+import {
+  fetchFreezes,
+  FreezesResponse,
+} from "@/lib/freezesApi";
 import { BadgeItem, buildBadgesView } from "@/lib/badges";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -102,6 +106,11 @@ export default function BadgesPage() {
   const [checkInsByHabit, setCheckInsByHabit] = useState<
     Record<number, ApiCheckIn[]>
   >({});
+  const [freezes, setFreezes] = useState<FreezesResponse>({
+    remaining: 3,
+    total: 3,
+    by_habit: {},
+  });
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -109,8 +118,14 @@ export default function BadgesPage() {
     setError(null);
 
     try {
-      const next = await fetchHabits();
+      const [next, nextFreezes] = await Promise.all([
+        fetchHabits(),
+        fetchFreezes().catch(
+          (): FreezesResponse => ({ remaining: 3, total: 3, by_habit: {} }),
+        ),
+      ]);
       setHabits(next);
+      setFreezes(nextFreezes);
 
       const pairs = await Promise.all(
         next.map(async (habit) => {
@@ -150,8 +165,13 @@ export default function BadgesPage() {
   }, [router, load]);
 
   const view = useMemo(
-    () => buildBadgesView({ habits, checkInsByHabit }),
-    [habits, checkInsByHabit],
+    () =>
+      buildBadgesView({
+        habits,
+        checkInsByHabit,
+        frozenByHabit: freezes.by_habit,
+      }),
+    [habits, checkInsByHabit, freezes.by_habit],
   );
 
   async function logout() {

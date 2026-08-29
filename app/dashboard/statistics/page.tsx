@@ -13,6 +13,10 @@ import {
 import { ApiHabit, fetchHabits } from "@/lib/habits";
 import { ApiCheckIn, fetchHabitCheckIns } from "@/lib/checkInsApi";
 import {
+  fetchFreezes,
+  FreezesResponse,
+} from "@/lib/freezesApi";
+import {
   buildStatisticsView,
   StatsRange,
 } from "@/lib/statistics";
@@ -65,6 +69,11 @@ export default function StatisticsPage() {
   const [checkInsByHabit, setCheckInsByHabit] = useState<
     Record<number, ApiCheckIn[]>
   >({});
+  const [freezes, setFreezes] = useState<FreezesResponse>({
+    remaining: 3,
+    total: 3,
+    by_habit: {},
+  });
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<StatsRange>("year");
 
@@ -73,8 +82,14 @@ export default function StatisticsPage() {
     setError(null);
 
     try {
-      const next = await fetchHabits();
+      const [next, nextFreezes] = await Promise.all([
+        fetchHabits(),
+        fetchFreezes().catch(
+          (): FreezesResponse => ({ remaining: 3, total: 3, by_habit: {} }),
+        ),
+      ]);
       setHabits(next);
+      setFreezes(nextFreezes);
 
       const pairs = await Promise.all(
         next.map(async (habit) => {
@@ -118,9 +133,10 @@ export default function StatisticsPage() {
       buildStatisticsView({
         habits,
         checkInsByHabit,
+        frozenByHabit: freezes.by_habit,
         range,
       }),
-    [habits, checkInsByHabit, range],
+    [habits, checkInsByHabit, freezes.by_habit, range],
   );
 
   async function logout() {

@@ -132,6 +132,7 @@ function uniqueSessionCount(checkIns: ApiCheckIn[]): number {
 export function buildStatisticsView(opts: {
   habits: ApiHabit[];
   checkInsByHabit: Record<number, ApiCheckIn[]>;
+  frozenByHabit?: Record<string, string[]>;
   range?: StatsRange;
   today?: Date;
 }): StatisticsView {
@@ -141,12 +142,25 @@ export function buildStatisticsView(opts: {
   const fromKey = rangeStart(range, today, year);
   const toKey = toDateKey(today);
   const habits = opts.habits;
+  const frozenByHabit = opts.frozenByHabit ?? {};
 
   const perHabit = habits.map((habit) => {
     const all = opts.checkInsByHabit[habit.id] ?? [];
+    const frozenPeriodKeys =
+      frozenByHabit[String(habit.id)] ?? frozenByHabit[habit.id as unknown as string] ?? [];
     const inRange = filterCheckIns(all, fromKey, toKey);
-    const stats = computePeriodStats({ habit, checkIns: all, today });
-    const periods = listPeriodSnapshots({ habit, checkIns: all, today });
+    const stats = computePeriodStats({
+      habit,
+      checkIns: all,
+      today,
+      frozenPeriodKeys,
+    });
+    const periods = listPeriodSnapshots({
+      habit,
+      checkIns: all,
+      today,
+      frozenPeriodKeys,
+    });
     return {
       habit,
       all,
