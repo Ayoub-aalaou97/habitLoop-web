@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveToken } from "@/lib/auth";
+import { PageLoader } from "@/components/LoadingSpinner";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -29,18 +30,16 @@ export default function AuthCallbackPage() {
     router.replace("/dashboard");
   }, [router]);
 
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-      {error ? (
-        <>
-          <p className="text-red-600">{error}</p>
-          <a href="/login" className="underline">
-            Back to login
-          </a>
-        </>
-      ) : (
-        <p>Signing you in…</p>
-      )}
-    </main>
-  );
+  if (error) {
+    return (
+      <main className="flex min-h-dvh flex-1 flex-col items-center justify-center gap-4 bg-bg p-8">
+        <p className="text-danger">{error}</p>
+        <a href="/login" className="text-brand-soft underline">
+          Back to login
+        </a>
+      </main>
+    );
+  }
+
+  return <PageLoader label="Signing you in…" />;
 }
