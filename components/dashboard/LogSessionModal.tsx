@@ -217,10 +217,10 @@ export function LogSessionModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="log-session-title"
-          className="relative z-10 flex max-h-[92dvh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-[28px] border border-white/[0.09] bg-[#13151a] shadow-[0_-20px_50px_-10px_rgba(0,0,0,0.6)] sm:rounded-[22px] sm:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
+          className="relative z-10 flex max-h-[92dvh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-[28px] border border-border bg-bg-elevated shadow-[0_-20px_50px_-10px_rgba(0,0,0,0.6)] sm:rounded-[22px] sm:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
         >
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5 pt-3.5 sm:px-[30px] sm:pb-7 sm:pt-[26px]">
-          <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#3a3e48] sm:hidden" />
+          <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-bg-muted sm:hidden" />
 
           <div className="mb-5 flex items-start justify-between gap-3 sm:mb-[22px]">
             <div className="flex min-w-0 items-center gap-3">
@@ -234,7 +234,7 @@ export function LogSessionModal({
               <div className="min-w-0">
                 <h2
                   id="log-session-title"
-                  className="m-0 mb-1 text-[22px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
+                  className="m-0 mb-1 text-[22px] font-extrabold tracking-[-0.02em] text-text"
                 >
                   <span className="sm:hidden">{mobileTitle}</span>
                   <span className="hidden sm:inline">{title}</span>
@@ -244,7 +244,7 @@ export function LogSessionModal({
                   style={{
                     color: isBackfill
                       ? habitColorWithAlpha(color, 0.85)
-                      : "#6b7280",
+                      : "var(--text-dim)",
                   }}
                 >
                   {whenLabel}
@@ -257,7 +257,7 @@ export function LogSessionModal({
               aria-label="Close"
               disabled={busy}
               onClick={onClose}
-              className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-white/[0.07] bg-[#1b1e25] text-[16px] text-[#9aa0ab] transition hover:text-white disabled:opacity-50"
+              className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-border bg-bg-muted text-[16px] text-text-soft transition hover:text-text disabled:opacity-50"
             >
               ×
             </button>
@@ -265,7 +265,7 @@ export function LogSessionModal({
 
           {habits.length > 1 ? (
             <>
-              <div className="mb-2.5 text-[12px] font-semibold text-[#9aa0ab]">
+              <div className="mb-2.5 text-[12px] font-semibold text-text-soft">
                 Which hobby?
               </div>
               <div className="mb-[22px] flex flex-wrap gap-2">
@@ -285,9 +285,9 @@ export function LogSessionModal({
                               color: "#cfe9fb",
                             }
                           : {
-                              background: "#1b1e25",
-                              borderColor: "rgba(255,255,255,0.07)",
-                              color: "#9aa0ab",
+                              background: "var(--bg-muted)",
+                              borderColor: "var(--border)",
+                              color: "var(--text-soft)",
                             }
                       }
                     >
@@ -304,7 +304,7 @@ export function LogSessionModal({
           ) : null}
 
           <div className="mb-2.5 flex items-center justify-between gap-3">
-            <span className="text-[12px] font-semibold text-[#9aa0ab] sm:text-[12.5px]">
+            <span className="text-[12px] font-semibold text-text-soft sm:text-[12.5px]">
               How did it feel?
             </span>
             <span
@@ -337,7 +337,7 @@ export function LogSessionModal({
             })}
           </div>
 
-          <div className="mb-2.5 text-[12px] font-semibold text-[#9aa0ab] sm:mb-[11px] sm:text-[12.5px]">
+          <div className="mb-2.5 text-[12px] font-semibold text-text-soft sm:mb-[11px] sm:text-[12.5px]">
             Add a note
           </div>
           <textarea
@@ -345,7 +345,7 @@ export function LogSessionModal({
             onChange={(e) => setNote(e.target.value)}
             rows={3}
             placeholder="How did the session go?"
-            className="mb-5 w-full resize-none rounded-[13px] border border-white/[0.08] bg-[#1b1e25] px-4 py-3.5 text-[14px] font-medium leading-relaxed text-[#cfd2d8] outline-none placeholder:text-[#5b6070] focus:border-white/[0.16] sm:mb-5"
+            className="mb-5 w-full resize-none rounded-[13px] border border-border bg-bg-muted px-4 py-3.5 text-[14px] font-medium leading-relaxed text-text-body outline-none placeholder:text-text-dim focus:border-border sm:mb-5"
           />
 
           {isBackfill && !isEdit ? (
@@ -375,7 +375,7 @@ export function LogSessionModal({
           ) : null}
         </div>
 
-        <div className="flex flex-none flex-col gap-2.5 border-t border-white/[0.06] bg-[#0e1014] px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-[30px] sm:pb-4">
+        <div className="flex flex-none flex-col gap-2.5 border-t border-border-soft bg-bg-sidebar px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-[30px] sm:pb-4">
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <button
               type="submit"
@@ -397,7 +397,7 @@ export function LogSessionModal({
               type="button"
               disabled={busy}
               onClick={onClose}
-              className="order-2 w-full rounded-[14px] border border-white/[0.07] bg-[#1b1e25] py-3.5 text-[14px] font-semibold text-[#9aa0ab] transition hover:text-white disabled:opacity-50 sm:order-1 sm:w-auto sm:flex-none sm:px-6 sm:py-[15px]"
+              className="order-2 w-full rounded-[14px] border border-border bg-bg-muted py-3.5 text-[14px] font-semibold text-text-soft transition hover:text-text disabled:opacity-50 sm:order-1 sm:w-auto sm:flex-none sm:px-6 sm:py-[15px]"
             >
               Cancel
             </button>

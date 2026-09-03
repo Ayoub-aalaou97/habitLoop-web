@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark, BrandWordmark } from "@/components/BrandMark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const STRIP = [
   "rgba(56,189,248,0.85)",
@@ -38,13 +39,16 @@ const CARD_HEIGHT = "sm:min-h-[620px]";
 
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-bg p-4">
+    <main className="relative flex min-h-dvh items-center justify-center bg-bg p-4">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
       <div
-        className={`flex w-full max-w-[368px] flex-col overflow-hidden rounded-3xl border border-white/[0.07] bg-bg shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] ${CARD_HEIGHT}`}
+        className={`flex w-full max-w-[368px] flex-col overflow-hidden rounded-3xl border border-border bg-bg-elevated shadow-[var(--shadow-card)] ${CARD_HEIGHT}`}
       >
         <div className="flex flex-1 flex-col px-6 pb-4 pt-5">{children}</div>
 
-        <div className="shrink-0 border-t border-white/[0.06] px-6 py-2.5">
+        <div className="shrink-0 border-t border-border-soft px-6 py-2.5">
           <div className="mb-1.5 flex gap-1">
             {STRIP.map((color, index) => (
               <div
@@ -77,7 +81,7 @@ export function AuthHeader({
         <BrandWordmark className="text-[16px]" />
       </div>
 
-      <h1 className="mb-1 text-[22px] font-extrabold leading-tight tracking-[-0.03em] text-[#f4f5f7]">
+      <h1 className="mb-1 text-[22px] font-extrabold leading-tight tracking-[-0.03em] text-text">
         {title}
       </h1>
       <p className="mb-3 text-[12.5px] leading-snug text-text-muted">
@@ -89,12 +93,12 @@ export function AuthHeader({
 
 export function AuthToggle({ active }: { active: "login" | "register" }) {
   const activeClass =
-    "flex-1 rounded-lg bg-bg-soft py-1.5 text-center text-[13px] font-semibold text-[#f2f3f5] shadow-[0_1px_2px_rgba(0,0,0,0.3)]";
+    "flex-1 rounded-lg bg-bg-elevated py-1.5 text-center text-[13px] font-semibold text-text-heading shadow-[0_1px_2px_rgba(15,18,26,0.08)]";
   const inactiveClass =
-    "flex-1 rounded-lg py-1.5 text-center text-[13px] font-semibold text-[#777c8a] transition hover:text-text-soft";
+    "flex-1 rounded-lg py-1.5 text-center text-[13px] font-semibold text-text-muted transition hover:text-text-soft";
 
   return (
-    <div className="mb-3 flex gap-1.5 rounded-xl border border-white/[0.06] bg-bg-elevated p-1">
+    <div className="mb-3 flex gap-1.5 rounded-xl border border-border-soft bg-bg-soft p-1">
       {active === "login" ? (
         <div className={activeClass}>Log in</div>
       ) : (
@@ -118,13 +122,13 @@ export const fieldLabelClass =
   "mb-0.5 text-[11px] font-semibold text-text-soft";
 
 export const fieldInputClass =
-  "w-full rounded-lg border border-white/[0.08] bg-bg-elevated px-3.5 py-2 text-[13.5px] font-medium text-[#e3e5e9] outline-none placeholder:text-text-dim focus:border-[rgba(111,123,255,0.45)] focus:shadow-[0_0_0_3px_rgba(111,123,255,0.12)]";
+  "w-full rounded-lg border border-border bg-bg-soft px-3.5 py-2 text-[13.5px] font-medium text-text-body outline-none placeholder:text-text-dim focus:border-[rgba(111,123,255,0.45)] focus:shadow-[0_0_0_3px_rgba(111,123,255,0.12)]";
 
 export const fieldBoxClass =
-  "flex items-center gap-2.5 rounded-lg border border-white/[0.08] bg-bg-elevated px-3.5 py-2 focus-within:border-[rgba(111,123,255,0.45)] focus-within:shadow-[0_0_0_3px_rgba(111,123,255,0.12)]";
+  "flex items-center gap-2.5 rounded-lg border border-border bg-bg-soft px-3.5 py-2 focus-within:border-[rgba(111,123,255,0.45)] focus-within:shadow-[0_0_0_3px_rgba(111,123,255,0.12)]";
 
 export const primaryButtonClass =
   "rounded-xl bg-gradient-to-b from-brand to-brand-strong py-2.5 text-center text-[14px] font-bold text-white shadow-[0_8px_22px_-6px_rgba(111,123,255,0.6),inset_0_1px_0_rgba(255,255,255,0.25)] transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const googleButtonClass =
-  "w-full rounded-xl border border-white/[0.08] bg-bg-elevated py-2.5 text-center text-[13px] font-semibold text-[#e8e9ec] transition hover:bg-bg-soft";
+  "w-full rounded-xl border border-border bg-bg-soft py-2.5 text-center text-[13px] font-semibold text-text-heading transition hover:bg-bg-muted";

@@ -24,6 +24,7 @@ import { PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const RANGES: { id: StatsRange; label: string }[] = [
   { id: "30d", label: "30 days" },
@@ -39,7 +40,7 @@ function RangeToggle({
   onChange: (next: StatsRange) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-[12px] border border-white/[0.07] bg-[#15171c] p-1">
+    <div className="flex gap-1 rounded-[12px] border border-border bg-bg-soft p-1">
       {RANGES.map((item) => {
         const active = item.id === value;
         return (
@@ -49,8 +50,8 @@ function RangeToggle({
             onClick={() => onChange(item.id)}
             className={`rounded-[8px] px-3.5 py-2 text-[12.5px] font-semibold transition sm:px-[15px] ${
               active
-                ? "bg-[#2a2e37] text-[#f2f3f5] shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-                : "text-[#9aa0ab] hover:text-[#d5d7de]"
+                ? "bg-bg-elevated text-text-heading shadow-[0_1px_2px_rgba(15,18,26,0.08)]"
+                : "text-text-soft hover:text-text-body"
             }`}
           >
             {item.label}
@@ -183,15 +184,16 @@ export default function StatisticsPage() {
       />
 
       <div className="min-w-0 flex-1">
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-white/[0.06] bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border-soft bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
           <div className="min-w-0">
-            <h1 className="m-0 truncate text-[18px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]">
+            <h1 className="m-0 truncate text-[18px] font-extrabold tracking-[-0.02em] text-text">
               Statistics
             </h1>
-            <p className="m-0 truncate font-mono text-[11px] font-medium text-[#6b7280]">
+            <p className="m-0 truncate font-mono text-[11px] font-medium text-text-dim">
               {view.subtitle}
             </p>
           </div>
+          <ThemeToggle compact />
         </div>
 
         <div className="px-[18px] pb-9 pt-5 sm:px-[34px] sm:pt-[30px]">
@@ -203,14 +205,17 @@ export default function StatisticsPage() {
 
           <div className="mb-5 hidden items-start justify-between gap-4 sm:mb-6 sm:flex">
             <div>
-              <h1 className="m-0 mb-1 text-[27px] font-extrabold tracking-[-0.025em] text-[#f4f5f7]">
+              <h1 className="m-0 mb-1 text-[27px] font-extrabold tracking-[-0.025em] text-text">
                 Statistics
               </h1>
-              <p className="m-0 font-mono text-[13px] font-medium text-[#6b7280]">
+              <p className="m-0 font-mono text-[13px] font-medium text-text-dim">
                 {view.subtitle}
               </p>
             </div>
-            <RangeToggle value={range} onChange={setRange} />
+            <div className="flex items-center gap-3">
+              <RangeToggle value={range} onChange={setRange} />
+              <ThemeToggle compact />
+            </div>
           </div>
 
           <div className="mb-5 sm:hidden">
@@ -221,9 +226,9 @@ export default function StatisticsPage() {
             {view.kpis.map((kpi) => (
               <div
                 key={kpi.label}
-                className="min-w-[168px] flex-none rounded-[18px] border border-white/[0.06] bg-[#15171c] px-[18px] py-4 sm:min-w-0 sm:flex-none sm:px-5 sm:py-[18px]"
+                className="min-w-[168px] flex-none rounded-[18px] border border-border-soft bg-bg-elevated px-[18px] py-4 sm:min-w-0 sm:flex-none sm:px-5 sm:py-[18px]"
               >
-                <div className="mb-2.5 font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[#6b7280]">
+                <div className="mb-2.5 font-mono text-[10.5px] font-semibold tracking-[0.08em] text-text-dim">
                   {kpi.label}
                 </div>
                 <div className="mb-1 flex items-baseline gap-1.5">
@@ -233,30 +238,36 @@ export default function StatisticsPage() {
                   >
                     {kpi.value}
                   </span>
-                  <span className="text-[12.5px] font-semibold text-[#8a8f9c]">
+                  <span className="text-[12.5px] font-semibold text-text-muted">
                     {kpi.unit}
                   </span>
                 </div>
-                <div className="text-[11px] font-medium text-[#5b6070]">
+                <div className="text-[11px] font-medium text-text-dim">
                   {kpi.note}
                 </div>
               </div>
             ))}
           </div>
 
-          <section className="mb-[18px] rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-6 sm:py-5">
+          <section className="mb-[18px] rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-6 sm:py-5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-[18px]">
               <div>
-                <h2 className="m-0 text-[15px] font-bold text-[#eceef1]">
+                <h2 className="m-0 text-[15px] font-bold text-text-body">
                   Goal completion by month
                 </h2>
-                <p className="m-0 mt-0.5 font-mono text-[11px] font-medium text-[#6b7280]">
+                <p className="m-0 mt-0.5 font-mono text-[11px] font-medium text-text-dim">
                   % of period goals met · all hobbies
                 </p>
               </div>
-              <div className="flex items-center gap-2 rounded-[9px] bg-[#1b1e25] px-3 py-1.5">
-                <div className="h-2.5 w-2.5 rounded-[2px] bg-gradient-to-b from-[#9aa3ff] to-[#6f7bff]" />
-                <span className="font-mono text-[10.5px] font-semibold text-[#9aa3ff]">
+              <div className="flex items-center gap-2 rounded-[9px] bg-bg-muted px-3 py-1.5">
+                <div
+                  className="h-2.5 w-2.5 rounded-[2px]"
+                  style={{ background: "var(--chart-bar-best)" }}
+                />
+                <span
+                  className="font-mono text-[10.5px] font-semibold"
+                  style={{ color: "var(--accent-stat)" }}
+                >
                   best month
                 </span>
               </div>
@@ -272,20 +283,33 @@ export default function StatisticsPage() {
                   className="flex h-full flex-1 flex-col items-center justify-end gap-2"
                 >
                   <span
-                    className={`font-mono text-[10px] font-bold sm:text-[10.5px] ${
-                      month.isBest ? "text-[#9aa3ff]" : "text-[#777c8a]"
-                    }`}
+                    className="font-mono text-[10px] font-bold sm:text-[10.5px]"
+                    style={{
+                      color: month.isBest
+                        ? "var(--accent-stat)"
+                        : "var(--text-muted)",
+                    }}
                   >
                     {month.pct}
                   </span>
                   <div
                     className="w-full rounded-[5px]"
                     style={{
-                      height: `${Math.max(4, Math.round((month.pct / 100) * monthMaxHeight))}px`,
-                      background: month.fill,
+                      height: `${
+                        month.pct <= 0
+                          ? 3
+                          : Math.max(
+                              4,
+                              Math.round((month.pct / 100) * monthMaxHeight),
+                            )
+                      }px`,
+                      background:
+                        month.pct <= 0
+                          ? "var(--heat-empty)"
+                          : month.fill,
                     }}
                   />
-                  <span className="font-mono text-[10px] font-semibold text-[#5b6070]">
+                  <span className="font-mono text-[10px] font-semibold text-text-dim">
                     {month.label}
                   </span>
                 </div>
@@ -294,16 +318,16 @@ export default function StatisticsPage() {
           </section>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.9fr_0.85fr] lg:gap-4">
-            <section className="rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-[22px] sm:py-[18px]">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-[#eceef1]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-[18px]">
+              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
                 By hobby
               </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-[#6b7280]">
+              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
                 sessions logged &amp; goal completion
               </p>
 
               {view.hobbies.length === 0 ? (
-                <p className="m-0 text-[13px] font-medium text-[#777c8a]">
+                <p className="m-0 text-[13px] font-medium text-text-muted">
                   No hobbies yet. Create one on the dashboard to see stats here.
                 </p>
               ) : (
@@ -316,15 +340,15 @@ export default function StatisticsPage() {
                             className="h-2.5 w-2.5 flex-none rounded-[3px]"
                             style={{ background: hobby.color }}
                           />
-                          <span className="truncate text-[13.5px] font-semibold text-[#dfe1e6]">
+                          <span className="truncate text-[13.5px] font-semibold text-text-body">
                             {hobby.name}
                           </span>
-                          <span className="hidden font-mono text-[10.5px] font-medium text-[#5b6070] sm:inline">
+                          <span className="hidden font-mono text-[10.5px] font-medium text-text-dim sm:inline">
                             {hobby.goalLabel}
                           </span>
                         </div>
                         <div className="flex flex-none items-baseline gap-2.5">
-                          <span className="font-mono text-[11px] font-medium text-[#777c8a]">
+                          <span className="font-mono text-[11px] font-medium text-text-muted">
                             {hobby.sessions} sessions
                           </span>
                           <span
@@ -335,7 +359,7 @@ export default function StatisticsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="h-[7px] overflow-hidden rounded-[4px] bg-[#1b1e25]">
+                      <div className="h-[7px] overflow-hidden rounded-[4px] bg-bg-muted">
                         <div
                           className="h-full rounded-[4px]"
                           style={{
@@ -350,11 +374,11 @@ export default function StatisticsPage() {
               )}
             </section>
 
-            <section className="rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-[22px] sm:py-[18px]">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-[#eceef1]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-[18px]">
+              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
                 When you show up
               </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-[#6b7280]">
+              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
                 sessions by weekday
               </p>
               <div className="flex h-[112px] items-end gap-2">
@@ -363,7 +387,7 @@ export default function StatisticsPage() {
                     key={`${day.label}-${idx}`}
                     className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
                   >
-                    <span className="font-mono text-[10.5px] font-bold text-[#777c8a]">
+                    <span className="font-mono text-[10.5px] font-bold text-text-muted">
                       {day.value}
                     </span>
                     <div
@@ -371,11 +395,11 @@ export default function StatisticsPage() {
                       style={{
                         height: `${Math.max(4, Math.round((day.pctHeight / 100) * 84))}px`,
                         background: day.isMax
-                          ? "linear-gradient(180deg,#9aa3ff,#6f7bff)"
+                          ? "var(--chart-bar-best)"
                           : "rgba(111,123,255,0.38)",
                       }}
                     />
-                    <span className="font-mono text-[10px] font-semibold text-[#5b6070]">
+                    <span className="font-mono text-[10px] font-semibold text-text-dim">
                       {day.label}
                     </span>
                   </div>
@@ -383,11 +407,11 @@ export default function StatisticsPage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-[22px] sm:py-[18px]">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-[#eceef1]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-[18px]">
+              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
                 How it felt
               </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-[#6b7280]">
+              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
                 mood across all check-ins
               </p>
               <div className="flex flex-col gap-[11px]">
@@ -403,7 +427,7 @@ export default function StatisticsPage() {
                     >
                       {mood.face}
                     </span>
-                    <div className="h-[7px] min-w-0 flex-1 overflow-hidden rounded-[4px] bg-[#1b1e25]">
+                    <div className="h-[7px] min-w-0 flex-1 overflow-hidden rounded-[4px] bg-bg-muted">
                       <div
                         className="h-full rounded-[4px]"
                         style={{
@@ -412,7 +436,7 @@ export default function StatisticsPage() {
                         }}
                       />
                     </div>
-                    <span className="w-7 flex-none text-right font-mono text-[11px] font-bold text-[#8a8f9c]">
+                    <span className="w-7 flex-none text-right font-mono text-[11px] font-bold text-text-muted">
                       {mood.pct}%
                     </span>
                   </div>

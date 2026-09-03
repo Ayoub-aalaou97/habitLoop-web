@@ -53,7 +53,7 @@ function timesMax(frequency: Frequency) {
 }
 
 function emptyMini(_color: string) {
-  const off = "rgba(255,255,255,0.045)";
+  const off = "var(--heat-empty)";
   return Array.from({ length: 7 }, () => off);
 }
 
@@ -186,7 +186,7 @@ export function CreateHabitModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-habit-title"
-        className="relative z-10 flex max-h-[92dvh] w-full max-w-[840px] flex-col overflow-hidden rounded-t-[22px] border border-white/[0.09] bg-[#13151a] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)] sm:mx-4 sm:max-h-[85dvh] sm:flex-row sm:rounded-[22px]"
+        className="relative z-10 flex max-h-[92dvh] w-full max-w-[840px] flex-col overflow-hidden rounded-t-[22px] border border-border bg-bg-elevated shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)] sm:mx-4 sm:max-h-[85dvh] sm:flex-row sm:rounded-[22px]"
       >
         {/* Form */}
         <form
@@ -198,11 +198,11 @@ export function CreateHabitModal({
             <div>
               <h2
                 id="create-habit-title"
-                className="m-0 mb-1 text-[22px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
+                className="m-0 mb-1 text-[22px] font-extrabold tracking-[-0.02em] text-text"
               >
                 {title}
               </h2>
-              <p className="m-0 font-mono text-[13px] font-medium text-[#6b7280]">
+              <p className="m-0 font-mono text-[13px] font-medium text-text-dim">
                 {subtitle}
               </p>
             </div>
@@ -210,7 +210,7 @@ export function CreateHabitModal({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-white/[0.07] bg-[#1b1e25] text-[16px] text-[#9aa0ab] transition hover:text-white"
+              className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-border bg-bg-muted text-[16px] text-text-soft transition hover:text-text"
             >
               ×
             </button>
@@ -218,7 +218,7 @@ export function CreateHabitModal({
 
           <label
             htmlFor="habit-name"
-            className="mb-[9px] block text-[12px] font-semibold text-[#9aa0ab]"
+            className="mb-[9px] block text-[12px] font-semibold text-text-soft"
           >
             Name
           </label>
@@ -228,7 +228,7 @@ export function CreateHabitModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Reading"
-            className="mb-4 w-full rounded-xl border bg-[#1b1e25] px-[15px] py-[13px] text-[15px] font-semibold text-[#eceef1] outline-none placeholder:text-[#5b6070] sm:mb-[16px]"
+            className="mb-4 w-full rounded-xl border bg-bg-muted px-[15px] py-[13px] text-[15px] font-semibold text-text-body outline-none placeholder:text-text-dim sm:mb-[16px]"
             style={{
               borderColor: `${color}80`,
               boxShadow: `0 0 0 3px ${color}1f`,
@@ -238,11 +238,11 @@ export function CreateHabitModal({
           <div className="mb-[9px] flex items-center justify-between">
             <label
               htmlFor="habit-frage"
-              className="block text-[12px] font-semibold text-[#9aa0ab]"
+              className="block text-[12px] font-semibold text-text-soft"
             >
               Frage
             </label>
-            <span className="text-[11px] font-medium text-[#5b6070]">
+            <span className="text-[11px] font-medium text-text-dim">
               optional
             </span>
           </div>
@@ -252,13 +252,13 @@ export function CreateHabitModal({
             value={frage}
             onChange={(e) => setFrage(e.target.value)}
             placeholder="Did you read today?"
-            className="mb-5 w-full rounded-xl border border-white/[0.08] bg-[#1b1e25] px-[15px] py-[13px] text-[15px] font-medium text-[#eceef1] outline-none placeholder:text-[#5b6070] focus:border-white/[0.16] sm:mb-[20px]"
+            className="mb-5 w-full rounded-xl border border-border bg-bg-muted px-[15px] py-[13px] text-[15px] font-medium text-text-body outline-none placeholder:text-text-dim focus:border-border sm:mb-[20px]"
           />
-          <p className="-mt-3 mb-5 text-[11.5px] font-medium leading-snug text-[#6b7280] sm:-mt-3 sm:mb-[18px]">
+          <p className="-mt-3 mb-5 text-[11.5px] font-medium leading-snug text-text-dim sm:-mt-3 sm:mb-[18px]">
             Used in reminders, e.g. “Did you read today?”
           </p>
 
-          <label className="mb-[11px] block text-[12px] font-semibold text-[#9aa0ab]">
+          <label className="mb-[11px] block text-[12px] font-semibold text-text-soft">
             Accent color
           </label>
           <div className="mb-5 flex flex-wrap gap-[11px] sm:mb-[22px]">
@@ -282,10 +282,10 @@ export function CreateHabitModal({
             })}
           </div>
 
-          <label className="mb-[11px] block text-[12px] font-semibold text-[#9aa0ab]">
+          <label className="mb-[11px] block text-[12px] font-semibold text-text-soft">
             Goal frequency
           </label>
-          <div className="mb-3.5 flex gap-1.5 rounded-xl border border-white/[0.06] bg-[#1b1e25] p-[5px]">
+          <div className="mb-3.5 flex gap-1.5 rounded-xl border border-border-soft bg-bg-muted p-[5px]">
             {(
               [
                 ["daily", "Daily"],
@@ -301,8 +301,8 @@ export function CreateHabitModal({
                   onClick={() => selectFrequency(value)}
                   className={`flex-1 rounded-lg py-[9px] text-center text-[13px] font-semibold transition ${
                     active
-                      ? "bg-[#2a2e37] text-[#f2f3f5] shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-                      : "text-[#9aa0ab] hover:text-[#d5d7de]"
+                      ? "bg-bg-elevated text-text-heading shadow-[0_1px_2px_rgba(15,18,26,0.08)]"
+                      : "text-text-soft hover:text-text-body"
                   }`}
                 >
                   {text}
@@ -312,18 +312,18 @@ export function CreateHabitModal({
           </div>
 
           {frequency === "daily" ? (
-            <div className="mb-5 rounded-xl bg-[#1b1e25] px-4 py-3 sm:mb-[22px]">
-              <div className="text-[13px] font-semibold text-[#eceef1]">
+            <div className="mb-5 rounded-xl bg-bg-muted px-4 py-3 sm:mb-[22px]">
+              <div className="text-[13px] font-semibold text-text-body">
                 Every day · target 1
               </div>
-              <p className="mt-1 text-[12px] font-medium text-[#777c8a]">
+              <p className="mt-1 text-[12px] font-medium text-text-muted">
                 Check in once to close today’s loop.
               </p>
             </div>
           ) : (
-            <div className="mb-5 rounded-xl bg-[#1b1e25] px-4 py-3 sm:mb-[22px]">
+            <div className="mb-5 rounded-xl bg-bg-muted px-4 py-3 sm:mb-[22px]">
               <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-[#9aa0ab]">
+                <span className="text-[13px] font-semibold text-text-soft">
                   {timesUnit(frequency)}
                 </span>
                 <div className="flex items-center gap-4">
@@ -332,11 +332,11 @@ export function CreateHabitModal({
                     aria-label="Decrease"
                     disabled={times <= 1}
                     onClick={() => setTimes((t) => Math.max(1, t - 1))}
-                    className="text-[20px] font-light text-[#5b6070] transition enabled:hover:text-[#c9b0e8] disabled:opacity-40"
+                    className="text-[20px] font-light text-text-dim transition enabled:hover:text-[#c9b0e8] disabled:opacity-40"
                   >
                     −
                   </button>
-                  <span className="min-w-[1.5ch] text-center font-mono text-[16px] font-bold text-[#eceef1]">
+                  <span className="min-w-[1.5ch] text-center font-mono text-[16px] font-bold text-text-body">
                     {times}
                   </span>
                   <button
@@ -353,19 +353,19 @@ export function CreateHabitModal({
                   </button>
                 </div>
               </div>
-              <p className="mt-1.5 text-[12px] font-medium text-[#777c8a]">
+              <p className="mt-1.5 text-[12px] font-medium text-text-muted">
                 Close the loop with {times} day
                 {times === 1 ? "" : "s"} each {frequency === "weekly" ? "week" : "month"}.
               </p>
             </div>
           )}
 
-          <div className="mb-5 flex items-center justify-between rounded-xl bg-[#1b1e25] px-4 py-3.5 sm:mb-0">
+          <div className="mb-5 flex items-center justify-between rounded-xl bg-bg-muted px-4 py-3.5 sm:mb-0">
             <div>
-              <div className="mb-0.5 text-[13.5px] font-bold text-[#eceef1]">
+              <div className="mb-0.5 text-[13.5px] font-bold text-text-body">
                 Set a reminder
               </div>
-              <div className="font-mono text-[11.5px] font-medium text-[#777c8a]">
+              <div className="font-mono text-[11.5px] font-medium text-text-muted">
                 Nudge me at {reminderTime}
               </div>
             </div>
@@ -376,20 +376,25 @@ export function CreateHabitModal({
               onClick={() => setReminderEnabled((v) => !v)}
               className="relative h-[25px] w-[42px] flex-none rounded-[13px] transition"
               style={{
-                background: reminderEnabled ? color : "#23262f",
+                background: reminderEnabled ? color : "var(--toggle-off)",
+                boxShadow: reminderEnabled
+                  ? "inset 0 1px 2px rgba(0,0,0,0.2)"
+                  : "inset 0 1px 2px rgba(15,18,26,0.06)",
               }}
             >
               <span
-                className={`absolute top-[2.5px] h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.4)] transition-[left] ${
-                  reminderEnabled ? "left-[19.5px]" : "left-[2.5px]"
-                }`}
+                className="absolute top-[2.5px] h-5 w-5 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.4)] transition-[left,background]"
+                style={{
+                  left: reminderEnabled ? 19.5 : 2.5,
+                  background: reminderEnabled ? "#fff" : "var(--text-dim)",
+                }}
               />
             </button>
           </div>
 
           {/* Mobile actions stay pinned under the form */}
           </div>
-          <div className="flex flex-col gap-2.5 border-t border-white/[0.06] bg-[#0e1014] px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:hidden">
+          <div className="flex flex-col gap-2.5 border-t border-border-soft bg-bg-sidebar px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:hidden">
             {error ? (
               <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[13px] text-danger">
                 {error}
@@ -411,7 +416,7 @@ export function CreateHabitModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab] disabled:opacity-50"
+              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-text-soft disabled:opacity-50"
             >
               Cancel
             </button>
@@ -419,12 +424,12 @@ export function CreateHabitModal({
         </form>
 
         {/* Live preview — desktop */}
-        <aside className="hidden w-[288px] flex-none flex-col border-l border-white/[0.06] bg-[#0e1014] px-6 py-6 sm:flex">
-          <div className="mb-4 font-mono text-[11px] font-semibold tracking-[0.1em] text-[#6b7280]">
+        <aside className="hidden w-[288px] flex-none flex-col border-l border-border-soft bg-bg-sidebar px-6 py-6 sm:flex">
+          <div className="mb-4 font-mono text-[11px] font-semibold tracking-[0.1em] text-text-dim">
             LIVE PREVIEW
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-[#15171c] p-[18px]">
+          <div className="rounded-2xl border border-border-soft bg-bg-elevated p-[18px]">
             <div className="mb-3.5 flex items-center justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
                 <div
@@ -435,10 +440,10 @@ export function CreateHabitModal({
                   }}
                 />
                 <div className="min-w-0">
-                  <div className="truncate text-[15px] font-bold text-[#eceef1]">
+                  <div className="truncate text-[15px] font-bold text-text-body">
                     {name.trim() || "New habit"}
                   </div>
-                  <div className="text-[11.5px] font-medium text-[#777c8a]">
+                  <div className="text-[11.5px] font-medium text-text-muted">
                     {label}
                   </div>
                 </div>
@@ -456,7 +461,7 @@ export function CreateHabitModal({
                 >
                   0
                 </span>
-                <span className="text-[12px] font-semibold text-[#8a8f9c]">
+                <span className="text-[12px] font-semibold text-text-muted">
                   {frequency === "daily"
                     ? "day streak"
                     : frequency === "weekly"
@@ -464,13 +469,13 @@ export function CreateHabitModal({
                       : "month streak"}
                 </span>
               </div>
-              <div className="font-mono text-[12px] font-bold text-[#e8e9ec]">
+              <div className="font-mono text-[12px] font-bold text-text-heading">
                 0/{frequency === "daily" ? 1 : times}
               </div>
             </div>
 
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-[11.5px] font-medium text-[#777c8a]">
+              <span className="text-[11.5px] font-medium text-text-muted">
                 {frequency === "daily"
                   ? "today"
                   : frequency === "weekly"
@@ -490,7 +495,7 @@ export function CreateHabitModal({
             </div>
           </div>
 
-          <p className="mt-4 text-[12px] font-medium leading-relaxed text-[#777c8a]">
+          <p className="mt-4 text-[12px] font-medium leading-relaxed text-text-muted">
             Close the loop each {frequency === "daily" ? "day" : frequency === "weekly" ? "week" : "month"}. Streak counts consecutive loops.
           </p>
 
@@ -519,7 +524,7 @@ export function CreateHabitModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab] transition hover:text-[#d5d7de] disabled:opacity-50"
+              className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-text-soft transition hover:text-text-body disabled:opacity-50"
             >
               Cancel
             </button>

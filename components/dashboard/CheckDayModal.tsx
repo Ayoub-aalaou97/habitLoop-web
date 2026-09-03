@@ -164,22 +164,22 @@ export function CheckDayModal({
         };
       case "missed":
         return {
-          background: "#1b1e25",
-          border: "1px solid rgba(255,255,255,0.08)",
-          color: "#8a8f9c",
+          background: "var(--bg-muted)",
+          border: "1px solid var(--border)",
+          color: "var(--text-muted)",
         };
       case "locked":
         return {
           background:
-            "repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 4px, #12141a 4px 8px)",
-          border: "1px dashed rgba(255,255,255,0.16)",
-          color: "#5b6070",
+            "repeating-linear-gradient(135deg, color-mix(in srgb, var(--text) 8%, transparent) 0 4px, var(--bg-muted) 4px 8px)",
+          border: "1px dashed var(--border)",
+          color: "var(--text-dim)",
         };
       case "future":
         return {
           background: "transparent",
           border: "none",
-          color: "#3a3e48",
+          color: "var(--text-dim)",
         };
       default:
         return {
@@ -198,18 +198,18 @@ export function CheckDayModal({
           aria-label="Previous month"
           disabled={!canGoPrevMonth}
           onClick={() => shiftMonth(-1)}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[20px] font-light text-[#777c8a] transition hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[20px] font-light text-text-muted transition hover:bg-bg-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
         >
           ‹
         </button>
-        <span className="text-[15px] font-bold text-[#eceef1] sm:text-[16px]">
+        <span className="text-[15px] font-bold text-text-body sm:text-[16px]">
           {formatMonthTitle(cursor.year, cursor.month)}
         </span>
         <button
           type="button"
           aria-label="Next month"
           onClick={() => shiftMonth(1)}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[20px] font-light text-[#777c8a] transition hover:bg-white/[0.04] hover:text-white"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[20px] font-light text-text-muted transition hover:bg-bg-muted hover:text-text"
         >
           ›
         </button>
@@ -219,7 +219,7 @@ export function CheckDayModal({
         {DOW.map((d, idx) => (
           <div
             key={`${d}-${idx}`}
-            className="text-center font-mono text-[10px] font-semibold text-[#5b6070] sm:text-[11px]"
+            className="text-center font-mono text-[10px] font-semibold text-text-dim sm:text-[11px]"
           >
             {d}
           </div>
@@ -279,7 +279,7 @@ export function CheckDayModal({
                     viewBox="0 0 24 24"
                     fill="none"
                     aria-hidden="true"
-                    className="text-[#6b7280]"
+                    className="text-text-dim"
                   >
                     <path
                       d="M7 11V8a5 5 0 0 1 10 0v3"
@@ -318,13 +318,13 @@ export function CheckDayModal({
           className="h-[11px] w-[11px] rounded-[3px] sm:h-[15px] sm:w-[15px] sm:rounded"
           style={{ background: habitColor }}
         />
-        <span className="font-mono text-[11px] text-[#777c8a] sm:font-sans sm:text-[12.5px] sm:text-[#9aa0ab]">
+        <span className="font-mono text-[11px] text-text-muted sm:font-sans sm:text-[12.5px] sm:text-text-soft">
           Logged
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="h-[11px] w-[11px] rounded-[3px] border border-white/10 bg-[#1b1e25] sm:h-[15px] sm:w-[15px] sm:rounded" />
-        <span className="font-mono text-[11px] text-[#777c8a] sm:font-sans sm:text-[12.5px] sm:text-[#9aa0ab]">
+        <div className="h-[11px] w-[11px] rounded-[3px] border border-border bg-bg-muted sm:h-[15px] sm:w-[15px] sm:rounded" />
+        <span className="font-mono text-[11px] text-text-muted sm:font-sans sm:text-[12.5px] sm:text-text-soft">
           Missed
         </span>
       </div>
@@ -333,11 +333,11 @@ export function CheckDayModal({
           className="h-[11px] w-[11px] rounded-[3px] sm:h-[15px] sm:w-[15px] sm:rounded"
           style={{
             background:
-              "repeating-linear-gradient(135deg, rgba(255,255,255,0.08) 0 3px, #12141a 3px 6px)",
-            border: "1px dashed rgba(255,255,255,0.18)",
+              "repeating-linear-gradient(135deg, color-mix(in srgb, var(--text) 10%, transparent) 0 3px, var(--bg-muted) 3px 6px)",
+            border: "1px dashed var(--border)",
           }}
         />
-        <span className="font-mono text-[11px] text-[#777c8a] sm:font-sans sm:text-[12.5px] sm:text-[#9aa0ab]">
+        <span className="font-mono text-[11px] text-text-muted sm:font-sans sm:text-[12.5px] sm:text-text-soft">
           Locked
         </span>
       </div>
@@ -349,7 +349,7 @@ export function CheckDayModal({
             border: `1.5px solid ${habitColor}`,
           }}
         />
-        <span className="font-mono text-[11px] text-[#777c8a] sm:font-sans sm:text-[12.5px] sm:text-[#9aa0ab]">
+        <span className="font-mono text-[11px] text-text-muted sm:font-sans sm:text-[12.5px] sm:text-text-soft">
           Selected
         </span>
       </div>
@@ -360,7 +360,7 @@ export function CheckDayModal({
     <div
       className="rounded-2xl border px-4 py-4"
       style={{
-        background: "#15171c",
+        background: "var(--bg-elevated)",
         borderColor: habitColorWithAlpha(habitColor, 0.3),
       }}
     >
@@ -371,7 +371,7 @@ export function CheckDayModal({
         SELECTED
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-[16px] font-bold text-[#eceef1] sm:text-[17px]">
+        <div className="text-[16px] font-bold text-text-body sm:text-[17px]">
           {selectedLabel}
         </div>
         {selectedIsPast ? (
@@ -398,38 +398,38 @@ export function CheckDayModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="check-day-title-mobile"
-          className="relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-white/[0.09] bg-[#0c0d10] shadow-[0_-20px_50px_-10px_rgba(0,0,0,0.6)] sm:hidden"
+          className="relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[28px] border border-b-0 border-border bg-bg shadow-[0_-20px_50px_-10px_rgba(0,0,0,0.6)] sm:hidden"
         >
           <div className="flex items-center gap-3 px-[22px] pb-3 pt-4">
             <button
               type="button"
               aria-label="Back"
               onClick={onClose}
-              className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px] border border-white/[0.08] bg-[#15171c] text-[15px] font-semibold text-[#9aa0ab]"
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px] border border-border bg-bg-elevated text-[15px] font-semibold text-text-soft"
             >
               ←
             </button>
             <div className="min-w-0">
               <h2
                 id="check-day-title-mobile"
-                className="m-0 text-[20px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
+                className="m-0 text-[20px] font-extrabold tracking-[-0.02em] text-text"
               >
                 Check a day
               </h2>
-              <p className="m-0 font-mono text-[11.5px] font-medium text-[#6b7280]">
+              <p className="m-0 font-mono text-[11.5px] font-medium text-text-dim">
                 {habitName} · backfill a missed day
               </p>
             </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-[22px] pb-4">
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#15171c] px-4 py-5">
+            <div className="rounded-[20px] border border-border-soft bg-bg-elevated px-4 py-5">
               {calendar}
             </div>
             <div className="mx-1 mb-5 mt-4">{legend}</div>
             {selectedCard}
             {selectedIsPast ? (
-              <p className="mt-3 text-[12px] font-medium leading-relaxed text-[#777c8a]">
+              <p className="mt-3 text-[12px] font-medium leading-relaxed text-text-muted">
                 {freezesRemaining < 1
                   ? "No freezes left — past days stay locked. You can still log today."
                   : `Logging a past day spends a freeze to keep your ${streak}-${periodNoun(streakUnit, streak)} streak unbroken. ${freezesRemaining} left after this.`}
@@ -437,7 +437,7 @@ export function CheckDayModal({
             ) : null}
           </div>
 
-          <div className="flex-none space-y-2.5 border-t border-white/[0.06] bg-[#0c0d10] px-[22px] pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
+          <div className="flex-none space-y-2.5 border-t border-border-soft bg-bg px-[22px] pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
             <button
               type="button"
               disabled={!canLog}
@@ -456,7 +456,7 @@ export function CheckDayModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-full rounded-[14px] border border-white/[0.07] bg-[#1b1e25] py-3.5 text-center text-[14px] font-semibold text-[#9aa0ab]"
+              className="w-full rounded-[14px] border border-border bg-bg-muted py-3.5 text-center text-[14px] font-semibold text-text-soft"
             >
               Cancel
             </button>
@@ -468,7 +468,7 @@ export function CheckDayModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="check-day-title-desktop"
-          className="relative z-10 hidden w-full max-w-[840px] overflow-hidden rounded-[22px] border border-white/[0.09] bg-[#13151a] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)] sm:flex"
+          className="relative z-10 hidden w-full max-w-[840px] overflow-hidden rounded-[22px] border border-border bg-bg-elevated shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)] sm:flex"
         >
           <div className="min-w-0 flex-1 px-7 py-[26px]">
             <div className="mb-[22px] flex items-start justify-between gap-3">
@@ -483,11 +483,11 @@ export function CheckDayModal({
                 <div>
                   <h2
                     id="check-day-title-desktop"
-                    className="m-0 mb-[3px] text-[22px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
+                    className="m-0 mb-[3px] text-[22px] font-extrabold tracking-[-0.02em] text-text"
                   >
                     Check a day
                   </h2>
-                  <p className="m-0 font-mono text-[13px] font-medium text-[#6b7280]">
+                  <p className="m-0 font-mono text-[13px] font-medium text-text-dim">
                     {habitName} · backfill a missed day
                   </p>
                 </div>
@@ -496,7 +496,7 @@ export function CheckDayModal({
                 type="button"
                 aria-label="Close"
                 onClick={onClose}
-                className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] border border-white/[0.07] bg-[#1b1e25] text-[16px] text-[#9aa0ab] transition hover:text-white"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] border border-border bg-bg-muted text-[16px] text-text-soft transition hover:text-text"
               >
                 ×
               </button>
@@ -504,13 +504,13 @@ export function CheckDayModal({
             {calendar}
           </div>
 
-          <aside className="flex w-[288px] flex-none flex-col border-l border-white/[0.06] bg-[#0e1014] px-6 py-[26px]">
-            <div className="mb-4 font-mono text-[11px] font-semibold tracking-[0.1em] text-[#6b7280]">
+          <aside className="flex w-[288px] flex-none flex-col border-l border-border-soft bg-bg-sidebar px-6 py-[26px]">
+            <div className="mb-4 font-mono text-[11px] font-semibold tracking-[0.1em] text-text-dim">
               LEGEND
             </div>
             <div className="mb-6 flex flex-col gap-3">{legend}</div>
             {selectedCard}
-            <p className="mt-3.5 text-[12px] font-medium leading-relaxed text-[#777c8a]">
+            <p className="mt-3.5 text-[12px] font-medium leading-relaxed text-text-muted">
               {freezesRemaining < 1
                 ? "No freezes left — past days stay locked. You can still log today."
                 : `Logging a past day spends a freeze to keep your ${streak}-${periodNoun(streakUnit, streak)} streak unbroken.`}
@@ -535,7 +535,7 @@ export function CheckDayModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-[#9aa0ab] transition hover:text-white"
+                className="rounded-[13px] py-3 text-center text-[14px] font-semibold text-text-soft transition hover:text-text"
               >
                 Cancel
               </button>

@@ -4,9 +4,13 @@
   --bg: #0c0d10;
   --bg-elevated: #15171c;
   --bg-soft: #23262f;
+  --bg-sidebar: #0e1014;
+  --bg-muted: #1b1e25;
   --border: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.06);
   --text: #f4f5f7;
+  --text-heading: #f2f3f5;
+  --text-body: #eceef1;
   --text-muted: #7b8090;
   --text-soft: #9aa0ab;
   --text-dim: #5b6070;
@@ -16,12 +20,53 @@
   --brand-glow: rgba(111, 123, 255, 0.45);
   --brand-ring: rgba(111, 123, 255, 0.12);
   --danger: #f87171;
-  /* Mobile tab bar + home indicator clearance */
+  --heat-empty: rgba(255, 255, 255, 0.045);
+  --toggle-off: #23262f;
+  --accent-stat: #9aa3ff;
+  --accent-amber: #fcd34d;
+  --accent-cyan: #38bdf8;
+  --kpi-sessions: #e8e9ec;
+  --chart-bar: linear-gradient(180deg, #3a4060, #2b3050);
+  --chart-bar-best: linear-gradient(180deg, #9aa3ff, #6f7bff);
+  --shadow-card: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  --mark-conic: conic-gradient(from 215deg, #38bdf8, #a78bfa, #fb923c, #34d399, #38bdf8);
   --mobile-nav-height: 70px;
   --mobile-nav-offset: calc(
     var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)
   );
   --mobile-content-pad: calc(var(--mobile-nav-offset) + 28px);
+}
+
+html.light {
+  --bg: #f6f7fa;
+  --bg-elevated: #ffffff;
+  --bg-soft: #f1f3f7;
+  --bg-sidebar: #ffffff;
+  --bg-muted: #eef0f5;
+  --border: rgba(15, 18, 26, 0.09);
+  --border-soft: rgba(15, 18, 26, 0.07);
+  --text: #15181e;
+  --text-heading: #15181e;
+  --text-body: #22252c;
+  --text-muted: #6e7482;
+  --text-soft: #8b909d;
+  --text-dim: #767c8a;
+  --brand: #7a86ff;
+  --brand-strong: #5d69f0;
+  --brand-soft: #5d69f0;
+  --brand-glow: rgba(111, 123, 255, 0.28);
+  --brand-ring: rgba(111, 123, 255, 0.12);
+  --danger: #e11d48;
+  --heat-empty: rgba(15, 18, 26, 0.05);
+  --toggle-off: #dfe2e9;
+  --accent-stat: #5b66e8;
+  --accent-amber: #d97706;
+  --accent-cyan: #0891b2;
+  --kpi-sessions: #22252c;
+  --chart-bar: linear-gradient(180deg, #d8dbe4, #c9cdd8);
+  --chart-bar-best: linear-gradient(180deg, #5b66e8, #6f7bff);
+  --shadow-card: 0 30px 80px -20px rgba(15, 18, 26, 0.12);
+  --mark-conic: conic-gradient(from 215deg, #0891b2, #7c3aed, #ea580c, #059669, #0891b2);
 }
 
 /* Force-hide tab bar while any sheet/modal is open (ported overlays). */
@@ -33,9 +78,13 @@ body[data-sheet-open="true"] .bottom-nav {
   --color-bg: var(--bg);
   --color-bg-elevated: var(--bg-elevated);
   --color-bg-soft: var(--bg-soft);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-muted: var(--bg-muted);
   --color-border: var(--border);
   --color-border-soft: var(--border-soft);
   --color-text: var(--text);
+  --color-text-heading: var(--text-heading);
+  --color-text-body: var(--text-body);
   --color-text-muted: var(--text-muted);
   --color-text-soft: var(--text-soft);
   --color-text-dim: var(--text-dim);
@@ -54,14 +103,17 @@ body[data-sheet-open="true"] .bottom-nav {
 html,
 body {
   height: 100%;
+  color: var(--text);
+  background: var(--bg);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
   font-family: var(--font-hanken), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
 }
 
 input,
@@ -71,7 +123,7 @@ button {
 
 .scroll-area {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: color-mix(in srgb, var(--text) 18%, transparent) transparent;
   scrollbar-gutter: stable;
 }
 
@@ -84,12 +136,12 @@ button {
 }
 
 .scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--text) 18%, transparent);
   border-radius: 999px;
 }
 
 .scroll-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: color-mix(in srgb, var(--text) 28%, transparent);
 }
 
 @keyframes hl-spin {

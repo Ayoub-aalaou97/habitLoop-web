@@ -12,9 +12,9 @@ export function StreakFreezesCard({
   const slots = 4;
 
   return (
-    <section className="card freezes-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[20px]">
+    <section className="card freezes-card rounded-[16px] border border-border-soft bg-bg-elevated p-[20px]">
       <div className="mb-[14px] flex items-center justify-between">
-        <h3 className="m-0 text-[14px] font-bold text-[#e8e9ec]">
+        <h3 className="m-0 text-[14px] font-bold text-text-heading">
           Streak freezes
         </h3>
         <span className="font-mono text-[11px] font-semibold text-text-dim">
@@ -28,7 +28,7 @@ export function StreakFreezesCard({
             return (
               <div
                 key={`f-${idx}`}
-                className="freeze-tile aspect-square flex-1 animate-pulse rounded-[11px] bg-white/[0.04]"
+                className="freeze-tile aspect-square flex-1 animate-pulse rounded-[11px] bg-bg-muted"
               />
             );
           }
@@ -56,7 +56,7 @@ export function StreakFreezesCard({
                 key={`f-${idx}`}
                 className="freeze-tile freeze-dashed aspect-square flex-1 rounded-[11px]"
                 style={{
-                  border: "1.5px dashed #2c303a",
+                  border: "1.5px dashed var(--border)",
                   background: "transparent",
                 }}
               />
@@ -68,7 +68,7 @@ export function StreakFreezesCard({
               key={`f-${idx}`}
               className="freeze-tile freeze-empty aspect-square flex-1 rounded-[11px]"
               style={{
-                border: "1.5px solid rgba(44,48,58,0.18)",
+                border: "1.5px solid var(--border-soft)",
                 background: "transparent",
               }}
             />
@@ -76,7 +76,7 @@ export function StreakFreezesCard({
         })}
       </div>
 
-      <p className="m-0 text-[12px] font-medium leading-snug text-[#777c8a]">
+      <p className="m-0 text-[12px] font-medium leading-snug text-text-muted">
         Miss a loop and a freeze still counts it — one missed day, week, or
         month stays on the streak.
       </p>

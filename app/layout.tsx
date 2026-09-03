@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const hanken = Hanken_Grotesk({
@@ -23,18 +24,22 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const themeBootScript = `(function(){try{var t=localStorage.getItem("habitloop_theme")==="light"?"light":"dark";var r=document.documentElement;r.classList.toggle("light",t==="light");r.classList.toggle("dark",t==="dark");r.style.colorScheme=t;r.dataset.theme=t;}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${hanken.variable} ${jetbrains.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-bg text-text font-sans">
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
+      <body
+        className={`${hanken.variable} ${jetbrains.variable} flex min-h-full flex-col bg-bg font-sans text-text antialiased`}
+      >
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

@@ -186,7 +186,7 @@ function buildMini(
   const rng = mulberry32(seed);
   const { r, g, b } = hexToRgb(color);
   const alphas = [0.2, 0.42, 0.68, 0.95];
-  const empty = "rgba(255,255,255,0.045)";
+  const empty = "var(--heat-empty)";
   const weeks: string[][] = [];
   let streakLeft = streakLen;
 

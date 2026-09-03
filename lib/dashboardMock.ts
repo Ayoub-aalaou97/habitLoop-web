@@ -110,7 +110,7 @@ function generateMiniHeatmap(opts: {
 
   const days = HEATMAP_WEEKS * 7;
   const mini: MiniHeatCell[][] = [];
-  const off = "rgba(255,255,255,0.045)";
+  const off = "var(--heat-empty)";
 
   for (let w = 0; w < HEATMAP_WEEKS; w++) {
     const week: MiniHeatCell[] = [];
@@ -241,10 +241,7 @@ export const dashboardMock: DashboardMock = (() => {
   const consistencyMonthly: ConsistencyMonth[] = completionMonthly.map((v, i) => ({
     label: MONTHS[i] ?? "",
     pct: v,
-    fill:
-      v === 94
-        ? "linear-gradient(180deg,#9aa3ff,#6f7bff)"
-        : "linear-gradient(180deg,#3a4060,#2b3050)",
+    fill: v === 94 ? "var(--chart-bar-best)" : "var(--chart-bar)",
   }));
 
   return {

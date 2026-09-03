@@ -23,12 +23,12 @@ function NavTab({
 }) {
   return (
     <Link href={href} className="flex flex-1 flex-col items-center gap-[5px]">
-      <span className={active ? "text-[#aeb3f5]" : "text-[#5b6070]"}>
+      <span className={active ? "text-brand-soft" : "text-text-dim"}>
         {icon}
       </span>
       <span
         className={`text-[10px] font-semibold ${
-          active ? "text-[#aeb3f5]" : "text-[#777c8a]"
+          active ? "text-brand-soft" : "text-text-muted"
         }`}
       >
         {label}
@@ -47,7 +47,7 @@ export function MobileBottomNav({ onAddClick }: { onAddClick?: () => void }) {
 
   return (
     <nav
-      className="bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.07] bg-[#0e1014] lg:hidden"
+      className="bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg-sidebar lg:hidden"
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}

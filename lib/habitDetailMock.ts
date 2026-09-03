@@ -82,7 +82,7 @@ function cellColor(
   rgb: { r: number; g: number; b: number },
   level: number,
 ): string {
-  if (level <= 0) return "rgba(255,255,255,0.045)";
+  if (level <= 0) return "var(--heat-empty)";
   const alpha = [0.2, 0.42, 0.68, 0.95][Math.max(0, Math.min(3, level - 1))]!;
   return `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
 }

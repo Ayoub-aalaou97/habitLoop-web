@@ -10,10 +10,7 @@ export function BrandMark({ size = 38 }: BrandMarkProps) {
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <div
         className="absolute inset-0 rounded-full"
-        style={{
-          background:
-            "conic-gradient(from 215deg,#38bdf8,#a78bfa,#fb923c,#34d399,#38bdf8)",
-        }}
+        style={{ background: "var(--mark-conic)" }}
       />
       <div
         className="absolute rounded-full bg-bg"
@@ -23,8 +20,7 @@ export function BrandMark({ size = 38 }: BrandMarkProps) {
         className="absolute rounded-full"
         style={{
           inset: insetInner,
-          background:
-            "conic-gradient(from 215deg,#38bdf8,#a78bfa,#fb923c,#34d399,#38bdf8)",
+          background: "var(--mark-conic)",
         }}
       />
     </div>
@@ -34,7 +30,7 @@ export function BrandMark({ size = 38 }: BrandMarkProps) {
 export function BrandWordmark({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`font-bold tracking-[-0.02em] text-[#f2f3f5] ${className}`}
+      className={`font-bold tracking-[-0.02em] text-text-heading ${className}`}
     >
       Habit<span className="text-text-soft">Loop</span>
     </span>

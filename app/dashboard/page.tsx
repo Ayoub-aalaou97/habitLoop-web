@@ -39,6 +39,7 @@ import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
 import { StreakFreezesCard } from "@/components/dashboard/StreakFreezesCard";
 import { ConsistencyChart } from "@/components/dashboard/ConsistencyChart";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   CreateHabitDraft,
   CreateHabitModal,
@@ -436,39 +437,42 @@ export default function DashboardPage() {
       />
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between border-b border-white/[0.04] bg-bg-soft px-[22px] pb-[12px] pt-[16px] lg:hidden">
+        <div className="flex items-center justify-between border-b border-border-soft bg-bg-soft px-[22px] pb-[12px] pt-[16px] lg:hidden">
           <div className="min-w-0">
             <div className="mb-[3px] font-mono text-[11.5px] text-text-dim">
               {mobileDateLabel}
             </div>
-            <div className="text-[22px] font-extrabold leading-tight text-[#f4f5f7]">
+            <div className="text-[22px] font-extrabold leading-tight text-text">
               Hey, {user.first_name}
             </div>
           </div>
 
-          <div className="flex flex-none items-center gap-[7px] rounded-[11px] border border-[rgba(56,189,248,0.25)] bg-bg-elevated px-[12px] py-[8px]">
-            <div className="flex gap-[2.5px]">
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <div
-                  key={`m-${idx}`}
-                  className={
-                    freezesReady && idx < freezePips
-                      ? "h-[12px] w-[9px] rounded-[2px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8]"
-                      : "h-[12px] w-[9px] rounded-[2px] bg-white/[0.06]"
-                  }
-                />
-              ))}
+          <div className="flex flex-none items-center gap-2">
+            <ThemeToggle compact />
+            <div className="flex items-center gap-[7px] rounded-[11px] border border-[rgba(56,189,248,0.25)] bg-bg-elevated px-[12px] py-[8px]">
+              <div className="flex gap-[2.5px]">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div
+                    key={`m-${idx}`}
+                    className={
+                      freezesReady && idx < freezePips
+                        ? "h-[12px] w-[9px] rounded-[2px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8]"
+                        : "h-[12px] w-[9px] rounded-[2px] bg-bg-muted"
+                    }
+                  />
+                ))}
+              </div>
+              <span className="font-mono text-[13px] font-extrabold text-[#38bdf8]">
+                {freezesReady ? freezesRemaining : "—"}
+              </span>
             </div>
-            <span className="font-mono text-[13px] font-extrabold text-[#cfe9fb]">
-              {freezesReady ? freezesRemaining : "—"}
-            </span>
           </div>
         </div>
 
         <div className="hidden px-[34px] pb-[36px] pt-[30px] lg:block">
           <div className="mb-[26px] flex items-start justify-between">
             <div>
-              <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.025em] text-[#f4f5f7]">
+              <h1 className="m-0 text-[26px] font-extrabold tracking-[-0.025em] text-text">
                 Good evening, {user.first_name}
               </h1>
               <p className="m-0 text-[14px] font-medium text-text-dim opacity-70">
@@ -485,12 +489,12 @@ export default function DashboardPage() {
                       className={
                         freezesReady && idx < freezePips
                           ? "h-[14px] w-[11px] rounded-[3px] bg-gradient-to-b from-[#7dd3fc] to-[#38bdf8] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
-                          : "h-[14px] w-[11px] rounded-[3px] bg-white/[0.06]"
+                          : "h-[14px] w-[11px] rounded-[3px] bg-bg-muted"
                       }
                     />
                   ))}
                 </div>
-                <span className="font-mono text-[13px] font-semibold text-[#cfe9fb]">
+                <span className="font-mono text-[13px] font-semibold text-[#38bdf8]">
                   {freezesReady ? `${freezesRemaining} freezes` : "— freezes"}
                 </span>
               </div>
@@ -507,16 +511,17 @@ export default function DashboardPage() {
                   Add habit
                 </span>
               </button>
+              <ThemeToggle compact />
             </div>
           </div>
 
           <div className="mb-[26px] grid grid-cols-4 gap-[16px]">
-            <div className="rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
+            <div className="rounded-[16px] border border-border-soft bg-bg-elevated p-[18px]">
               <div className="mb-[10px] text-[12px] font-semibold text-text-dim">
                 Active streak
               </div>
               <div className="flex items-baseline gap-[6px]">
-                <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
+                <span className="font-mono text-[30px] font-extrabold text-text">
                   {dashboardStats.activeStreak}
                 </span>
                 <span className="text-[13px] font-medium text-text-soft">
@@ -525,35 +530,35 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
+            <div className="rounded-[16px] border border-border-soft bg-bg-elevated p-[18px]">
               <div className="mb-[10px] text-[12px] font-semibold text-text-dim">
                 Consistency
               </div>
               <div className="flex items-baseline gap-[6px]">
-                <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
+                <span className="font-mono text-[30px] font-extrabold text-text">
                   {dashboardStats.completionRate}
                 </span>
                 <span className="text-[13px] font-medium text-text-soft">%</span>
               </div>
             </div>
 
-            <div className="rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
+            <div className="rounded-[16px] border border-border-soft bg-bg-elevated p-[18px]">
               <div className="mb-[10px] text-[12px] font-semibold text-text-dim">
                 Total sessions
               </div>
               <div className="flex items-baseline gap-[6px]">
-                <span className="font-mono text-[30px] font-extrabold text-[#f4f5f7]">
+                <span className="font-mono text-[30px] font-extrabold text-text">
                   {dashboardStats.totalSessions}
                 </span>
               </div>
             </div>
 
-            <div className="rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px]">
+            <div className="rounded-[16px] border border-border-soft bg-bg-elevated p-[18px]">
               <div className="mb-[10px] text-[12px] font-semibold text-text-dim">
                 Best month
               </div>
               <div className="flex items-baseline gap-[6px]">
-                <span className="text-[24px] font-bold text-[#f4f5f7]">
+                <span className="text-[24px] font-bold text-text">
                   {dashboardStats.bestMonth}
                 </span>
               </div>
@@ -563,7 +568,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-[1.5fr_1fr] gap-[24px]">
             <div>
               <div className="mb-[14px] flex items-center justify-between">
-                <h2 className="m-0 text-[16px] font-bold text-[#e8e9ec]">
+                <h2 className="m-0 text-[16px] font-bold text-text-heading">
                   Your hobbies
                 </h2>
                 <span className="font-mono text-[12px] font-semibold text-text-dim">
@@ -589,7 +594,7 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={openCreateModal}
-                    className="text-[14px] font-semibold text-[#aeb3f5] hover:text-white"
+                    className="text-[14px] font-semibold text-brand-soft hover:text-text"
                   >
                     + Add habit
                   </button>
