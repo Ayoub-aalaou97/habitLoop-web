@@ -223,7 +223,7 @@ export function ActivityHeatmap({
                       );
                       const isPastChecked =
                         Boolean(day.checked) &&
-                        Boolean(day.dateKey) &&
+                        day.dateKey != null &&
                         day.dateKey < todayKey;
                       const canClick =
                         Boolean(onDayClick) &&
