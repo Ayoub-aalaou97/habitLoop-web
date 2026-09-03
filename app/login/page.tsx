@@ -127,6 +127,7 @@ export default function LoginPage() {
         <Link
           href="/register"
           className="font-semibold text-brand-soft transition hover:text-text"
+          prefetch
         >
           Create an account
         </Link>

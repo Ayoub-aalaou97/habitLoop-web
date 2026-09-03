@@ -37,12 +37,44 @@ const STRIP = [
  */
 const CARD_HEIGHT = "sm:min-h-[620px]";
 
+function BackArrowIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M15 6 9 12l6 6"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
     <main className="relative flex min-h-dvh items-center justify-center bg-bg p-4">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+      <div className="absolute left-4 top-4 z-10 flex items-center gap-2 sm:left-6 sm:top-6">
+        <Link
+          href="/"
+          aria-label="Back to HabitLoop home"
+          className="inline-flex h-10 items-center gap-1.5 rounded-[11px] border border-border-soft bg-bg-elevated px-3 text-[13px] font-semibold text-text-muted transition hover:border-border hover:bg-bg-muted hover:text-text"
+        >
+          <BackArrowIcon />
+          <span className="hidden sm:inline">Back</span>
+        </Link>
+      </div>
+
+      <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
         <ThemeToggle />
       </div>
+
       <div
         className={`flex w-full max-w-[368px] flex-col overflow-hidden rounded-3xl border border-border bg-bg-elevated shadow-[var(--shadow-card)] ${CARD_HEIGHT}`}
       >
@@ -76,10 +108,14 @@ export function AuthHeader({
 }) {
   return (
     <>
-      <div className="mb-4 flex items-center gap-2.5">
+      <Link
+        href="/"
+        className="mb-4 inline-flex items-center gap-2.5 rounded-lg outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[rgba(111,123,255,0.35)]"
+        aria-label="HabitLoop home"
+      >
         <BrandMark size={28} />
         <BrandWordmark className="text-[16px]" />
-      </div>
+      </Link>
 
       <h1 className="mb-1 text-[22px] font-extrabold leading-tight tracking-[-0.03em] text-text">
         {title}
@@ -98,19 +134,39 @@ export function AuthToggle({ active }: { active: "login" | "register" }) {
     "flex-1 rounded-lg py-1.5 text-center text-[13px] font-semibold text-text-muted transition hover:text-text-soft";
 
   return (
-    <div className="mb-3 flex gap-1.5 rounded-xl border border-border-soft bg-bg-soft p-1">
+    <div
+      className="mb-3 flex gap-1.5 rounded-xl border border-border-soft bg-bg-soft p-1"
+      role="tablist"
+      aria-label="Account options"
+    >
       {active === "login" ? (
-        <div className={activeClass}>Log in</div>
+        <div className={activeClass} role="tab" aria-selected="true">
+          Log in
+        </div>
       ) : (
-        <Link href="/login" className={inactiveClass}>
+        <Link
+          href="/login"
+          className={inactiveClass}
+          role="tab"
+          aria-selected="false"
+          prefetch
+        >
           Log in
         </Link>
       )}
 
       {active === "register" ? (
-        <div className={activeClass}>Sign up</div>
+        <div className={activeClass} role="tab" aria-selected="true">
+          Sign up
+        </div>
       ) : (
-        <Link href="/register" className={inactiveClass}>
+        <Link
+          href="/register"
+          className={inactiveClass}
+          role="tab"
+          aria-selected="false"
+          prefetch
+        >
           Sign up
         </Link>
       )}
