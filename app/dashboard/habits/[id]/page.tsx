@@ -26,6 +26,7 @@ import { PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
 import {
   CreateHabitDraft,
@@ -72,7 +73,7 @@ function StatCard({
       style={{ borderColor: borderColor ?? "rgba(255,255,255,0.06)" }}
     >
       <div
-        className={`mb-2 font-semibold text-[#7b8090] ${
+        className={`mb-2 font-semibold text-text-muted ${
           compact ? "text-[11px]" : "mb-[9px] text-[11.5px]"
         }`}
       >
@@ -81,12 +82,12 @@ function StatCard({
       <div className="flex items-baseline gap-[5px]">
         <span
           className={`font-mono font-bold ${compact ? "text-[24px]" : "text-[28px]"}`}
-          style={{ color: accent ?? "#f4f5f7" }}
+          style={{ color: accent ?? "var(--text)" }}
         >
           {value}
         </span>
         {suffix ? (
-          <span className="text-[12px] font-medium text-[#8a8f9c]">{suffix}</span>
+          <span className="text-[12px] font-medium text-text-muted">{suffix}</span>
         ) : null}
       </div>
     </div>
@@ -346,7 +347,7 @@ export default function HabitDetailPage() {
           <p className="text-danger">{error ?? "Habit not found."}</p>
           <Link
             href="/dashboard"
-            className="text-[14px] font-semibold text-[#aeb3f5] hover:text-white"
+            className="text-[14px] font-semibold text-brand-soft hover:text-text"
           >
             ← Back to dashboard
           </Link>
@@ -398,43 +399,46 @@ export default function HabitDetailPage() {
 
       <div className="min-w-0 flex-1">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-white/[0.06] bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border-soft bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
           <Link
             href="/dashboard"
-            className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-[#777c8a]"
+            className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-text-muted"
           >
             <span aria-hidden="true">←</span>
-            <span className="truncate text-[#cfd2d8]">{habit.name}</span>
+            <span className="truncate text-text-body">{habit.name}</span>
           </Link>
-          <HabitDetailActions
-            compact
-            onEdit={() => setEditOpen(true)}
-            onDelete={() => setDeleteOpen(true)}
-          />
+          <div className="flex items-center gap-2">
+            <ThemeToggle compact />
+            <HabitDetailActions
+              compact
+              onEdit={() => setEditOpen(true)}
+              onDelete={() => setDeleteOpen(true)}
+            />
+          </div>
         </div>
 
         {/* Desktop top bar */}
-        <div className="hidden h-16 items-center justify-between gap-3 border-b border-white/[0.06] px-[34px] sm:flex">
+        <div className="hidden h-16 items-center justify-between gap-3 border-b border-border-soft px-[34px] sm:flex">
           <div className="flex min-w-0 items-center gap-[10px] text-[13px] font-semibold">
             <Link
               href="/dashboard"
-              className="flex items-center gap-[10px] text-[#777c8a] transition hover:text-[#cfd2d8]"
+              className="flex items-center gap-[10px] text-text-muted transition hover:text-text-body"
             >
               <span aria-hidden="true">←</span>
               <span>Dashboard</span>
             </Link>
-            <span className="text-[#3a3e48]">/</span>
-            <span className="truncate text-[#cfd2d8]">{habit.name}</span>
+            <span className="text-text-dim">/</span>
+            <span className="truncate text-text-body">{habit.name}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-[10px]">
             {detail.reminderLabel ? (
-              <div className="flex items-center gap-[7px] rounded-[11px] border border-white/[0.08] bg-[#15171c] px-[14px] py-[9px]">
+              <div className="flex items-center gap-[7px] rounded-[11px] border border-border bg-bg-elevated px-[14px] py-[9px]">
                 <div
                   className="h-1.5 w-1.5 rounded-full"
                   style={{ background: habit.color }}
                 />
-                <span className="text-[12.5px] font-semibold text-[#b9bdc6]">
+                <span className="text-[12.5px] font-semibold text-text-soft">
                   {detail.reminderLabel}
                 </span>
               </div>
@@ -444,6 +448,7 @@ export default function HabitDetailPage() {
               onEdit={() => setEditOpen(true)}
               onDelete={() => setDeleteOpen(true)}
             />
+            <ThemeToggle compact />
           </div>
         </div>
 
@@ -470,7 +475,7 @@ export default function HabitDetailPage() {
                 }}
               />
               <div className="min-w-0">
-                <h1 className="m-0 mb-1 text-[24px] font-extrabold tracking-[-0.025em] text-[#f4f5f7] sm:text-[28px]">
+                <h1 className="m-0 mb-1 text-[24px] font-extrabold tracking-[-0.025em] text-text sm:text-[28px]">
                   {habit.name}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-[10px]">
@@ -483,7 +488,7 @@ export default function HabitDetailPage() {
                   >
                     {detail.goalBadge}
                   </span>
-                  <span className="font-mono text-[12px] font-medium text-[#6b7280] sm:text-[13px]">
+                  <span className="font-mono text-[12px] font-medium text-text-dim sm:text-[13px]">
                     {detail.startedLabel}
                   </span>
                 </div>
@@ -493,7 +498,7 @@ export default function HabitDetailPage() {
                       className="h-1.5 w-1.5 rounded-full"
                       style={{ background: habit.color }}
                     />
-                    <span className="text-[12px] font-semibold text-[#8a8f9c]">
+                    <span className="text-[12px] font-semibold text-text-muted">
                       {detail.reminderLabel}
                     </span>
                   </div>
@@ -555,12 +560,12 @@ export default function HabitDetailPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1.15fr_1fr]">
-            <section className="rounded-[18px] border border-white/[0.06] bg-bg-elevated px-4 py-5 sm:px-[26px] sm:py-[24px]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[26px] sm:py-[24px]">
               <div className="mb-4 flex items-center justify-between gap-3 sm:mb-[22px]">
-                <h3 className="m-0 text-[15px] font-bold text-[#e8e9ec]">
+                <h3 className="m-0 text-[15px] font-bold text-text-heading">
                   Monthly consistency
                 </h3>
-                <span className="font-mono text-[10px] font-semibold text-[#6b7280] sm:text-[11px]">
+                <span className="font-mono text-[10px] font-semibold text-text-dim sm:text-[11px]">
                   SESSIONS / MONTH
                 </span>
               </div>
@@ -578,7 +583,7 @@ export default function HabitDetailPage() {
                         background: barGradient,
                       }}
                     />
-                    <span className="font-mono text-[9px] font-semibold text-[#5b6070] sm:text-[10px]">
+                    <span className="font-mono text-[9px] font-semibold text-text-dim sm:text-[10px]">
                       {month.label}
                     </span>
                   </div>
@@ -586,8 +591,8 @@ export default function HabitDetailPage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-white/[0.06] bg-bg-elevated px-4 py-5 sm:px-[26px] sm:py-[24px]">
-              <h3 className="m-0 mb-3 text-[15px] font-bold text-[#e8e9ec] sm:mb-[18px]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[26px] sm:py-[24px]">
+              <h3 className="m-0 mb-3 text-[15px] font-bold text-text-heading sm:mb-[18px]">
                 Recent check-ins
               </h3>
 
@@ -598,15 +603,15 @@ export default function HabitDetailPage() {
                     <div
                       key={`${entry.dayLabel}-${idx}`}
                       className={`flex items-start gap-3 py-3 sm:gap-3.5 ${
-                        isLast ? "" : "border-b border-white/[0.05]"
+                        isLast ? "" : "border-b border-border-soft"
                       }`}
                     >
-                      <div className="w-[48px] flex-none pt-px font-mono text-[11px] font-semibold text-[#8a8f9c] sm:w-[54px] sm:text-[11.5px]">
+                      <div className="w-[48px] flex-none pt-px font-mono text-[11px] font-semibold text-text-muted sm:w-[54px] sm:text-[11.5px]">
                         {entry.dayLabel}
                         <br />
-                        <span className="text-[#5b6070]">{entry.timeLabel}</span>
+                        <span className="text-text-dim">{entry.timeLabel}</span>
                       </div>
-                      <div className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-[#cfd2d8] sm:text-[13.5px]">
+                      <div className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-text-body sm:text-[13.5px]">
                         {entry.note}
                       </div>
                       <div className="flex gap-[3px] pt-[3px]">

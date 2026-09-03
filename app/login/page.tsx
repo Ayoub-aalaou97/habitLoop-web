@@ -79,12 +79,12 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••••"
-            className="min-w-0 flex-1 bg-transparent text-[13.5px] font-medium tracking-[0.08em] text-[#e3e5e9] outline-none placeholder:tracking-[0.2em] placeholder:text-text-dim"
+            className="min-w-0 flex-1 bg-transparent text-[13.5px] font-medium tracking-[0.08em] text-text-body outline-none placeholder:tracking-[0.2em] placeholder:text-text-dim"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="shrink-0 text-[11px] font-semibold text-brand-soft transition hover:text-white"
+            className="shrink-0 text-[11px] font-semibold text-brand-soft transition hover:text-text"
           >
             {showPassword ? "Hide" : "Show"}
           </button>
@@ -109,9 +109,9 @@ export default function LoginPage() {
       </form>
 
       <div className="my-3 flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/[0.06]" />
+        <div className="h-px flex-1 bg-bg-muted" />
         <span className="text-[11px] font-medium text-text-dim">or</span>
-        <div className="h-px flex-1 bg-white/[0.06]" />
+        <div className="h-px flex-1 bg-bg-muted" />
       </div>
 
       <button
@@ -126,7 +126,7 @@ export default function LoginPage() {
         New here?{" "}
         <Link
           href="/register"
-          className="font-semibold text-[#aeb3f5] transition hover:text-white"
+          className="font-semibold text-brand-soft transition hover:text-text"
         >
           Create an account
         </Link>

@@ -81,7 +81,7 @@ export function MiniHeatmap({
             >
               <span
                 className={`font-mono text-[10px] font-semibold ${
-                  isToday ? "text-[#e8e9ec]" : "text-[#6b7280]"
+                  isToday ? "text-text-heading" : "text-text-dim"
                 }`}
               >
                 {DOW[idx]}
@@ -101,14 +101,14 @@ export function MiniHeatmap({
                   height: 14,
                   boxSizing: "border-box",
                   background: cell.locked
-                    ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 4px)"
+                    ? "repeating-linear-gradient(135deg, color-mix(in srgb, var(--text) 6%, transparent) 0 2px, transparent 2px 4px)"
                     : cell.color,
                   border: cell.locked
-                    ? "1px dashed rgba(255,255,255,0.12)"
-                    : "1px solid rgba(255,255,255,0.04)",
+                    ? "1px dashed var(--border)"
+                    : "1px solid var(--border-soft)",
                   opacity: cell.locked ? 0.55 : 1,
                   outline: isToday
-                    ? "1px solid rgba(255,255,255,0.45)"
+                    ? "1px solid color-mix(in srgb, var(--text) 45%, transparent)"
                     : "none",
                   outlineOffset: 0,
                 }}
@@ -158,7 +158,7 @@ export function MiniHeatmap({
 
       {tip ? (
         <div
-          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-white/10 bg-[#16181f] px-2 py-1 font-mono text-[11px] font-medium text-[#e8e9ec] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
+          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-md border border-border bg-bg-elevated px-2 py-1 font-mono text-[11px] font-medium text-text-heading shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]"
           style={{ left: tip.x, top: tip.y }}
         >
           {tip.text}

@@ -113,18 +113,18 @@ export function ActivityHeatmap({
   }, [needsScroll, weeks.length, cell]);
 
   return (
-    <section className="rounded-[18px] border border-white/[0.06] bg-bg-elevated px-4 py-5 sm:px-[26px] sm:py-[24px]">
+    <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[26px] sm:py-[24px]">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-5">
         <div className="flex items-baseline gap-2">
-          <h3 className="m-0 text-[15px] font-bold text-[#e8e9ec] sm:text-[16px]">
+          <h3 className="m-0 text-[15px] font-bold text-text-heading sm:text-[16px]">
             Activity
           </h3>
-          <span className="font-mono text-[11px] font-semibold text-[#6b7280]">
+          <span className="font-mono text-[11px] font-semibold text-text-dim">
             {new Date().getFullYear()}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] font-medium text-[#6b7280] sm:text-[11px]">
+          <span className="font-mono text-[10px] font-medium text-text-dim sm:text-[11px]">
             Less
           </span>
           <div className="flex gap-[3px]">
@@ -135,13 +135,13 @@ export function ActivityHeatmap({
                 style={{
                   background:
                     idx === 0
-                      ? "rgba(255,255,255,0.045)"
+                      ? "var(--heat-empty)"
                       : habitColorWithAlpha(color, alpha),
                 }}
               />
             ))}
           </div>
-          <span className="font-mono text-[10px] font-medium text-[#6b7280] sm:text-[11px]">
+          <span className="font-mono text-[10px] font-medium text-text-dim sm:text-[11px]">
             More
           </span>
         </div>
@@ -149,10 +149,10 @@ export function ActivityHeatmap({
 
       {needsScroll ? (
         <div className="mb-2 flex items-center justify-between">
-          <span className="font-mono text-[10px] font-medium text-[#5b6070]">
+          <span className="font-mono text-[10px] font-medium text-text-dim">
             Swipe to explore the year
           </span>
-          <span className="font-mono text-[10px] font-medium text-[#6b7280]">
+          <span className="font-mono text-[10px] font-medium text-text-dim">
             →
           </span>
         </div>
@@ -167,7 +167,7 @@ export function ActivityHeatmap({
             {dayLabels.map((label, idx) => (
               <div
                 key={`dl-${idx}`}
-                className="flex items-center font-mono text-[9px] font-medium text-[#5b6070] sm:text-[10px]"
+                className="flex items-center font-mono text-[9px] font-medium text-text-dim sm:text-[10px]"
                 style={{ height: cell }}
               >
                 {label}
@@ -200,7 +200,7 @@ export function ActivityHeatmap({
                   week.label ? (
                     <span
                       key={`ml-${idx}`}
-                      className="absolute top-0 whitespace-nowrap font-mono text-[9px] font-medium text-[#6b7280] sm:text-[10px]"
+                      className="absolute top-0 whitespace-nowrap font-mono text-[9px] font-medium text-text-dim sm:text-[10px]"
                       style={{ left: idx * (cell + GAP) }}
                     >
                       {week.label}

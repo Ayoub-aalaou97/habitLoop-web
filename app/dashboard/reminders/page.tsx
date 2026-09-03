@@ -32,6 +32,7 @@ import { PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function Toggle({
   on,
@@ -53,15 +54,17 @@ function Toggle({
       onClick={onClick}
       className="relative h-[25px] w-[42px] flex-none rounded-[13px] transition"
       style={{
-        background: on ? (color ?? "#6f7bff") : "#23262f",
-        boxShadow: on ? "inset 0 1px 2px rgba(0,0,0,0.2)" : undefined,
+        background: on ? (color ?? "#6f7bff") : "var(--toggle-off)",
+        boxShadow: on
+          ? "inset 0 1px 2px rgba(0,0,0,0.2)"
+          : "inset 0 1px 2px rgba(15,18,26,0.06)",
       }}
     >
       <span
         className="absolute top-[2.5px] h-5 w-5 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.4)] transition-[left,background]"
         style={{
           left: on ? 19.5 : 2.5,
-          background: on ? "#fff" : "#5b6070",
+          background: on ? "#fff" : "var(--text-dim)",
         }}
       />
     </button>
@@ -96,9 +99,9 @@ function DayChip({
               color,
             }
           : {
-              background: "#1b1e25",
+              background: "var(--bg-muted)",
               border: "1px solid transparent",
-              color: "#5b6070",
+              color: "var(--text-dim)",
             }
       }
     >
@@ -277,13 +280,16 @@ export default function RemindersPage() {
       />
 
       <div className="min-w-0 flex-1">
-        <div className="sticky top-0 z-20 border-b border-white/[0.06] bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
-          <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.025em] text-[#f4f5f7]">
-            Reminders
-          </h1>
-          <p className="m-0 mt-1 font-mono text-[11px] font-medium text-[#6b7280]">
-            {activeCount} of {rows.length} active
-          </p>
+        <div className="sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-border-soft bg-bg/95 px-[18px] py-3 backdrop-blur-md sm:hidden">
+          <div>
+            <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.025em] text-text">
+              Reminders
+            </h1>
+            <p className="m-0 mt-1 font-mono text-[11px] font-medium text-text-dim">
+              {activeCount} of {rows.length} active
+            </p>
+          </div>
+          <ThemeToggle compact />
         </div>
 
         <div className="px-[18px] pb-9 pt-5 sm:px-[34px] sm:pt-[30px]">
@@ -293,17 +299,17 @@ export default function RemindersPage() {
             </p>
           ) : null}
           {saveMessage ? (
-            <p className="mb-4 rounded-lg border border-[#6f7bff]/25 bg-[#6f7bff]/10 px-3 py-2 text-[13px] text-[#c7cbff]">
+            <p className="mb-4 rounded-lg border border-[#6f7bff]/25 bg-[#6f7bff]/10 px-3 py-2 text-[13px] text-brand-soft">
               {saveMessage}
             </p>
           ) : null}
 
           <div className="mb-5 hidden items-start justify-between gap-4 sm:mb-6 sm:flex">
             <div>
-              <h1 className="m-0 mb-1 text-[27px] font-extrabold tracking-[-0.025em] text-[#f4f5f7]">
+              <h1 className="m-0 mb-1 text-[27px] font-extrabold tracking-[-0.025em] text-text">
                 Reminders
               </h1>
-              <p className="m-0 font-mono text-[13px] font-medium text-[#6b7280]">
+              <p className="m-0 font-mono text-[13px] font-medium text-text-dim">
                 {subtitle}
               </p>
             </div>
@@ -311,7 +317,7 @@ export default function RemindersPage() {
               <button
                 type="button"
                 onClick={handleTest}
-                className="rounded-[12px] border border-white/[0.07] bg-[#15171c] px-4 py-2.5 text-[13px] font-semibold text-[#9aa0ab] transition hover:text-white"
+                className="rounded-[12px] border border-border bg-bg-elevated px-4 py-2.5 text-[13px] font-semibold text-text-soft transition hover:text-text"
               >
                 Send test
               </button>
@@ -330,21 +336,22 @@ export default function RemindersPage() {
               >
                 {saving ? "Saving…" : "Save changes"}
               </button>
+              <ThemeToggle compact />
             </div>
           </div>
 
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-[#6b7280]">
+            <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-text-dim">
               PER HOBBY
             </div>
-            <span className="hidden font-mono text-[11px] font-medium text-[#5b6070] sm:inline">
+            <span className="hidden font-mono text-[11px] font-medium text-text-dim sm:inline">
               tap a day to toggle it
             </span>
           </div>
 
-          <section className="mb-5 overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#15171c] sm:mb-[22px]">
+          <section className="mb-5 overflow-hidden rounded-[18px] border border-border-soft bg-bg-elevated sm:mb-[22px]">
             {rows.length === 0 ? (
-              <p className="px-5 py-8 text-center text-[13px] font-medium text-[#777c8a]">
+              <p className="px-5 py-8 text-center text-[13px] font-medium text-text-muted">
                 No hobbies yet. Create one on the dashboard to set reminders.
               </p>
             ) : (
@@ -358,7 +365,7 @@ export default function RemindersPage() {
                 return (
                   <div
                     key={row.habitId}
-                    className={`${isLast ? "" : "border-b border-white/[0.05]"}`}
+                    className={`${isLast ? "" : "border-b border-border-soft"}`}
                   >
                     {/* Desktop row */}
                     <div className="hidden items-center gap-6 px-[22px] py-[18px] lg:flex">
@@ -376,7 +383,7 @@ export default function RemindersPage() {
                         <div
                           className="h-2.5 w-2.5 flex-none rounded-[3px]"
                           style={{
-                            background: row.enabled ? row.color : "#3a3e48",
+                            background: row.enabled ? row.color : "var(--text-dim)",
                             boxShadow: row.enabled
                               ? `0 0 8px ${row.color}`
                               : "none",
@@ -385,12 +392,12 @@ export default function RemindersPage() {
                         <div className="min-w-0">
                           <div
                             className={`truncate text-[14.5px] font-bold ${
-                              row.enabled ? "text-[#eceef1]" : "text-[#8a8f9c]"
+                              row.enabled ? "text-text-body" : "text-text-muted"
                             }`}
                           >
                             {row.name}
                           </div>
-                          <div className="truncate font-mono text-[11.5px] font-medium text-[#777c8a]">
+                          <div className="truncate font-mono text-[11.5px] font-medium text-text-muted">
                             {subtitleRow}
                           </div>
                         </div>
@@ -407,7 +414,7 @@ export default function RemindersPage() {
                           />
                         ))}
                       </div>
-                      <div className="flex w-[186px] flex-none items-center justify-between rounded-[11px] bg-[#1b1e25] px-3.5 py-2">
+                      <div className="flex w-[186px] flex-none items-center justify-between rounded-[11px] bg-bg-muted px-3.5 py-2">
                         <button
                           type="button"
                           disabled={!row.enabled}
@@ -416,13 +423,13 @@ export default function RemindersPage() {
                               time: shiftReminderTime(row.time, -30),
                             })
                           }
-                          className="text-[18px] font-light text-[#5b6070] disabled:opacity-40"
+                          className="text-[18px] font-light text-text-dim disabled:opacity-40"
                         >
                           −
                         </button>
                         <span
                           className={`font-mono text-[14px] font-bold ${
-                            row.enabled ? "text-[#eceef1]" : "text-[#5b6070]"
+                            row.enabled ? "text-text-body" : "text-text-dim"
                           }`}
                         >
                           {row.enabled ? row.time : "—"}
@@ -435,7 +442,7 @@ export default function RemindersPage() {
                               time: shiftReminderTime(row.time, 30),
                             })
                           }
-                          className="text-[18px] font-light text-[#9aa0ab] disabled:opacity-40"
+                          className="text-[18px] font-light text-text-soft disabled:opacity-40"
                         >
                           +
                         </button>
@@ -462,17 +469,17 @@ export default function RemindersPage() {
                           <div
                             className="h-2.5 w-2.5 flex-none rounded-[3px]"
                             style={{
-                              background: row.enabled ? row.color : "#3a3e48",
+                              background: row.enabled ? row.color : "var(--text-dim)",
                               boxShadow: row.enabled
                                 ? `0 0 8px ${row.color}`
                                 : "none",
                             }}
                           />
                           <div className="min-w-0">
-                            <div className="truncate text-[14px] font-bold text-[#eceef1]">
+                            <div className="truncate text-[14px] font-bold text-text-body">
                               {row.name}
                             </div>
-                            <div className="truncate font-mono text-[11.5px] font-medium text-[#777c8a]">
+                            <div className="truncate font-mono text-[11.5px] font-medium text-text-muted">
                               {subtitleRow}
                             </div>
                           </div>
@@ -500,8 +507,8 @@ export default function RemindersPage() {
                               />
                             ))}
                           </div>
-                          <div className="flex items-center justify-between rounded-[11px] bg-[#1b1e25] px-3.5 py-2.5">
-                            <span className="text-[12.5px] font-semibold text-[#9aa0ab]">
+                          <div className="flex items-center justify-between rounded-[11px] bg-bg-muted px-3.5 py-2.5">
+                            <span className="text-[12.5px] font-semibold text-text-soft">
                               Time
                             </span>
                             <div className="flex items-center gap-3.5">
@@ -512,11 +519,11 @@ export default function RemindersPage() {
                                     time: shiftReminderTime(row.time, -30),
                                   })
                                 }
-                                className="text-[18px] font-light text-[#5b6070]"
+                                className="text-[18px] font-light text-text-dim"
                               >
                                 −
                               </button>
-                              <span className="font-mono text-[15px] font-bold text-[#eceef1]">
+                              <span className="font-mono text-[15px] font-bold text-text-body">
                                 {row.time}
                               </span>
                               <button
@@ -526,7 +533,7 @@ export default function RemindersPage() {
                                     time: shiftReminderTime(row.time, 30),
                                   })
                                 }
-                                className="text-[18px] font-light text-[#9aa0ab]"
+                                className="text-[18px] font-light text-text-soft"
                               >
                                 +
                               </button>
@@ -542,11 +549,11 @@ export default function RemindersPage() {
           </section>
 
           <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.9fr_0.85fr]">
-            <section className="rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-[22px] sm:py-5">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-[#eceef1]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-5">
+              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
                 General
               </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-[#6b7280]">
+              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
                 applies to every hobby
               </p>
               <div className="flex flex-col gap-3">
@@ -574,14 +581,14 @@ export default function RemindersPage() {
                 ).map((item) => (
                   <div
                     key={item.key}
-                    className="flex items-center justify-between gap-3 rounded-[12px] bg-[#1b1e25] px-4 py-3.5"
+                    className="flex items-center justify-between gap-3 rounded-[12px] bg-bg-muted px-4 py-3.5"
                   >
                     <div className="min-w-0 pr-3">
-                      <div className="mb-0.5 text-[13.5px] font-bold text-[#eceef1]">
+                      <div className="mb-0.5 text-[13.5px] font-bold text-text-body">
                         {item.title}
                       </div>
                       <div
-                        className={`text-[11.5px] font-medium leading-snug text-[#777c8a] ${
+                        className={`text-[11.5px] font-medium leading-snug text-text-muted ${
                           item.mono ? "font-mono" : ""
                         }`}
                       >
@@ -604,28 +611,28 @@ export default function RemindersPage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-[22px] sm:py-5">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-[#eceef1]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-5">
+              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
                 Delivery
               </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-[#6b7280]">
+              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
                 where nudges arrive
               </p>
               <div className="flex flex-col gap-2.5">
                 {channels.map((channel) => (
                   <div
                     key={channel.id}
-                    className="flex items-center justify-between gap-3 rounded-[12px] bg-[#1b1e25] px-4 py-3.5"
+                    className="flex items-center justify-between gap-3 rounded-[12px] bg-bg-muted px-4 py-3.5"
                   >
                     <div className="min-w-0 pr-3">
                       <div
                         className={`mb-0.5 text-[13px] font-bold ${
-                          channel.on ? "text-[#eceef1]" : "text-[#9aa0ab]"
+                          channel.on ? "text-text-body" : "text-text-soft"
                         }`}
                       >
                         {channel.name}
                       </div>
-                      <div className="font-mono text-[11px] font-medium text-[#777c8a]">
+                      <div className="font-mono text-[11px] font-medium text-text-muted">
                         {channel.detail}
                       </div>
                     </div>
@@ -646,15 +653,15 @@ export default function RemindersPage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-white/[0.06] bg-[#15171c] px-4 py-5 sm:px-[22px] sm:py-5">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-[#eceef1]">
+            <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-5">
+              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
                 Up next
               </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-[#6b7280]">
+              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
                 scheduled nudges
               </p>
               {upNext.length === 0 ? (
-                <p className="m-0 text-[13px] font-medium text-[#777c8a]">
+                <p className="m-0 text-[13px] font-medium text-text-muted">
                   No nudges scheduled. Turn on a hobby reminder to fill this list.
                 </p>
               ) : (
@@ -665,7 +672,7 @@ export default function RemindersPage() {
                       className={`flex items-center gap-3 py-2.5 ${
                         idx === upNext.length - 1
                           ? ""
-                          : "border-b border-white/[0.04]"
+                          : "border-b border-border-soft"
                       }`}
                     >
                       <div
@@ -673,14 +680,14 @@ export default function RemindersPage() {
                         style={{ background: item.color }}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px] font-semibold text-[#dfe1e6]">
+                        <div className="truncate text-[13px] font-semibold text-text-body">
                           {item.name}
                         </div>
-                        <div className="font-mono text-[10.5px] font-medium text-[#6b7280]">
+                        <div className="font-mono text-[10.5px] font-medium text-text-dim">
                           {item.when}
                         </div>
                       </div>
-                      <span className="flex-none font-mono text-[11.5px] font-bold text-[#8a8f9c]">
+                      <span className="flex-none font-mono text-[11.5px] font-bold text-text-muted">
                         {item.time}
                       </span>
                     </div>
@@ -709,7 +716,7 @@ export default function RemindersPage() {
             <button
               type="button"
               onClick={handleTest}
-              className="rounded-[13px] border border-white/[0.07] bg-[#15171c] py-3 text-center text-[14px] font-semibold text-[#9aa0ab]"
+              className="rounded-[13px] border border-border bg-bg-elevated py-3 text-center text-[14px] font-semibold text-text-soft"
             >
               Send test
             </button>

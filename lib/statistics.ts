@@ -207,7 +207,7 @@ export function buildStatisticsView(opts: {
       label: "GOAL COMPLETION",
       value: String(goalCompletion),
       unit: "%",
-      color: "#9aa3ff",
+      color: "var(--accent-stat)",
       note:
         habits.length === 0
           ? "no hobbies yet"
@@ -217,7 +217,7 @@ export function buildStatisticsView(opts: {
       label: "TOTAL SESSIONS",
       value: String(totalSessions),
       unit: "logged",
-      color: "#e8e9ec",
+      color: "var(--kpi-sessions)",
       note:
         range === "30d"
           ? "last 30 days"
@@ -229,7 +229,7 @@ export function buildStatisticsView(opts: {
       label: "ACTIVE STREAK",
       value: String(active?.stats.currentStreak ?? 0),
       unit: activeUnit,
-      color: active?.habit.color ?? "#38bdf8",
+      color: active?.habit.color ?? "var(--accent-cyan)",
       note: active
         ? `${active.habit.name} · still running`
         : "start a habit to track streaks",
@@ -238,7 +238,7 @@ export function buildStatisticsView(opts: {
       label: "LONGEST STREAK",
       value: String(longest?.stats.longestStreak ?? 0),
       unit: longestUnit,
-      color: "#fcd34d",
+      color: "var(--accent-amber)",
       note: longest ? longest.habit.name : "—",
     },
   ];
@@ -274,9 +274,7 @@ export function buildStatisticsView(opts: {
       label: MONTH_LETTERS[i] ?? "",
       pct,
       isBest,
-      fill: isBest
-        ? "linear-gradient(180deg,#9aa3ff,#6f7bff)"
-        : "linear-gradient(180deg,#3a4060,#2b3050)",
+      fill: isBest ? "var(--chart-bar-best)" : "var(--chart-bar)",
     };
   });
 

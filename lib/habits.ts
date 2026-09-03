@@ -112,7 +112,7 @@ function buildMiniFromCheckIns(
   createdDateKey?: string | null,
 ): MiniHeatCell[][] {
   const { r, g, b } = hexToRgb(colorHex);
-  const off = "rgba(255,255,255,0.045)";
+  const off = "var(--heat-empty)";
   const today = startOfDay(new Date());
   const weekStart = startOfWeekSunday(today);
   const minKey = createdDateKey?.slice(0, 10) ?? null;

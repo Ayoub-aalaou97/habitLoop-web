@@ -55,7 +55,7 @@ export function ConfirmDialog({
           aria-modal="true"
           aria-labelledby="confirm-dialog-title"
           aria-describedby="confirm-dialog-message"
-          className="relative z-10 w-full max-w-[400px] overflow-hidden rounded-[22px] border border-white/[0.09] bg-[#13151a] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
+          className="relative z-10 w-full max-w-[400px] overflow-hidden rounded-[22px] border border-border bg-bg-elevated shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)]"
         >
           <div className="px-6 pb-5 pt-6">
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -63,7 +63,7 @@ export function ConfirmDialog({
                 className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${
                   danger
                     ? "bg-red-500/15 text-[#f87171]"
-                    : "bg-[rgba(111,123,255,0.15)] text-[#aeb3f5]"
+                    : "bg-[rgba(111,123,255,0.15)] text-brand-soft"
                 }`}
               >
                 {danger ? (
@@ -108,7 +108,7 @@ export function ConfirmDialog({
                 aria-label="Close"
                 disabled={loading}
                 onClick={onCancel}
-                className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-white/[0.07] bg-[#1b1e25] text-[16px] text-[#9aa0ab] transition hover:text-white disabled:opacity-50"
+                className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] border border-border bg-bg-muted text-[16px] text-text-soft transition hover:text-text disabled:opacity-50"
               >
                 ×
               </button>
@@ -116,24 +116,24 @@ export function ConfirmDialog({
 
             <h2
               id="confirm-dialog-title"
-              className="m-0 mb-2 text-[20px] font-extrabold tracking-[-0.02em] text-[#f4f5f7]"
+              className="m-0 mb-2 text-[20px] font-extrabold tracking-[-0.02em] text-text"
             >
               {title}
             </h2>
             <p
               id="confirm-dialog-message"
-              className="m-0 text-[14px] leading-relaxed text-[#8a8f9c]"
+              className="m-0 text-[14px] leading-relaxed text-text-muted"
             >
               {message}
             </p>
           </div>
 
-          <div className="flex gap-2.5 border-t border-white/[0.06] bg-[#0e1014] px-6 py-4">
+          <div className="flex gap-2.5 border-t border-border-soft bg-bg-sidebar px-6 py-4">
             <button
               type="button"
               disabled={loading}
               onClick={onCancel}
-              className="flex-1 rounded-[13px] border border-white/[0.08] bg-[#1b1e25] py-3 text-center text-[14px] font-semibold text-[#cfd2d8] transition hover:bg-[#23262f] disabled:opacity-50"
+              className="flex-1 rounded-[13px] border border-border bg-bg-muted py-3 text-center text-[14px] font-semibold text-text-body transition hover:bg-bg-soft disabled:opacity-50"
             >
               {cancelLabel}
             </button>

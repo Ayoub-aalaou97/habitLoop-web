@@ -42,7 +42,7 @@ function LoopRing({
           strokeDasharray={`${c * pct} ${c}`}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold text-[#e8e9ec]">
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold text-text-heading">
         {done}/{target}
       </span>
     </div>
@@ -99,19 +99,19 @@ export function HobbyCard({
           event.stopPropagation();
           setMenuOpen((v) => !v);
         }}
-        className="px-1 font-bold text-[16px] leading-none tracking-[1px] text-[#4b5060] transition hover:text-[#aeb3f5]"
+        className="px-1 font-bold text-[16px] leading-none tracking-[1px] text-[#4b5060] transition hover:text-brand-soft"
       >
         ···
       </button>
 
       {menuOpen ? (
         <div
-          className="absolute right-0 top-full z-20 mt-2 min-w-[140px] overflow-hidden rounded-xl border border-white/[0.08] bg-[#1b1e25] py-1 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7)]"
+          className="absolute right-0 top-full z-20 mt-2 min-w-[140px] overflow-hidden rounded-xl border border-border bg-bg-muted py-1 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7)]"
           onClick={(event) => event.stopPropagation()}
         >
           <button
             type="button"
-            className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-[#e8e9ec] transition hover:bg-white/[0.05]"
+            className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-text-heading transition hover:bg-bg-muted"
             onClick={() => {
               setMenuOpen(false);
               onEdit?.();
@@ -121,7 +121,7 @@ export function HobbyCard({
           </button>
           <button
             type="button"
-            className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-[#f87171] transition hover:bg-white/[0.05]"
+            className="block w-full px-3.5 py-2 text-left text-[13px] font-semibold text-[#f87171] transition hover:bg-bg-muted"
             onClick={() => {
               setMenuOpen(false);
               onDelete?.();
@@ -157,8 +157,8 @@ export function HobbyCard({
   if (variant === "mobile") {
     return (
       <div
-        className={`card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[14px] transition ${
-          href ? "cursor-pointer hover:border-white/[0.12]" : ""
+        className={`card hobby-card rounded-[16px] border border-border-soft bg-bg-elevated p-[14px] transition ${
+          href ? "cursor-pointer hover:border-border" : ""
         }`}
         {...interactiveProps}
       >
@@ -173,10 +173,10 @@ export function HobbyCard({
                 }}
               />
               <div className="min-w-0">
-                <div className="truncate text-[14.5px] font-bold leading-tight text-[#eceef1]">
+                <div className="truncate text-[14.5px] font-bold leading-tight text-text-body">
                   {hobby.name}
                 </div>
-                <div className="text-[11px] font-medium text-[#777c8a]">
+                <div className="text-[11px] font-medium text-text-muted">
                   {hobby.goalLabel}
                 </div>
               </div>
@@ -196,7 +196,7 @@ export function HobbyCard({
           >
             {hobby.streak}
           </span>
-          <span className="text-[11px] font-semibold text-[#8a8f9c]">
+          <span className="text-[11px] font-semibold text-text-muted">
             {hobby.unit}
           </span>
         </div>
@@ -209,8 +209,8 @@ export function HobbyCard({
 
   return (
     <div
-      className={`card hobby-card rounded-[16px] border border-white/[0.06] bg-bg-elevated p-[18px] transition ${
-        href ? "cursor-pointer hover:border-white/[0.12]" : ""
+      className={`card hobby-card rounded-[16px] border border-border-soft bg-bg-elevated p-[18px] transition ${
+        href ? "cursor-pointer hover:border-border" : ""
       }`}
       {...interactiveProps}
     >
@@ -224,10 +224,10 @@ export function HobbyCard({
             }}
           />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-bold leading-snug text-[#eceef1]">
+            <div className="truncate text-[15px] font-bold leading-snug text-text-body">
               {hobby.name}
             </div>
-            <div className="text-[11px] font-medium leading-snug text-[#777c8a]">
+            <div className="text-[11px] font-medium leading-snug text-text-muted">
               {hobby.goalLabel}
             </div>
           </div>
@@ -244,7 +244,7 @@ export function HobbyCard({
           >
             {hobby.streak}
           </span>
-          <span className="text-[12px] font-semibold text-[#8a8f9c]">
+          <span className="text-[12px] font-semibold text-text-muted">
             {hobby.unit}
           </span>
         </div>
@@ -252,10 +252,10 @@ export function HobbyCard({
       </div>
 
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[11.5px] font-medium text-[#777c8a]">
+        <span className="text-[11.5px] font-medium text-text-muted">
           {hobby.periodLabel}
         </span>
-        <span className="font-mono text-[11px] font-semibold text-[#6b7280]">
+        <span className="font-mono text-[11px] font-semibold text-text-dim">
           {hobby.consistency}% consistency
         </span>
       </div>

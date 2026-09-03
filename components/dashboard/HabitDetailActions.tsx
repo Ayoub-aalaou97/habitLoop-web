@@ -97,8 +97,8 @@ export function HabitDetailActions({
   }, [menuOpen]);
 
   const triggerClass = compact
-    ? "flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/[0.08] bg-[#15171c] text-[#b9bdc6] transition hover:border-white/[0.14] hover:bg-[#1b1e25] hover:text-white active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f7bff]"
-    : "inline-flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-white/[0.08] bg-[#15171c] text-[#9aa0ab] transition hover:border-white/[0.14] hover:bg-[#1b1e25] hover:text-white active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f7bff]";
+    ? "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-bg-elevated text-text-soft transition hover:border-border hover:bg-bg-muted hover:text-text active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f7bff]"
+    : "inline-flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-border bg-bg-elevated text-text-soft transition hover:border-border hover:bg-bg-muted hover:text-text active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f7bff]";
 
   return (
     <div ref={menuRef} className="relative flex-none">
@@ -118,21 +118,21 @@ export function HabitDetailActions({
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 top-full z-30 mt-2 min-w-[180px] overflow-hidden rounded-xl border border-white/[0.08] bg-[#1b1e25] py-1 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.75)]"
+          className="absolute right-0 top-full z-30 mt-2 min-w-[180px] overflow-hidden rounded-xl border border-border bg-bg-muted py-1 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.75)]"
         >
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#e8e9ec] transition hover:bg-white/[0.05]"
+            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] font-semibold text-text-heading transition hover:bg-bg-muted"
             onClick={() => {
               setMenuOpen(false);
               onEdit();
             }}
           >
-            <PencilIcon className="text-[#9aa0ab]" />
+            <PencilIcon className="text-text-soft" />
             Edit habit
           </button>
-          <div className="mx-2 my-1 h-px bg-white/[0.06]" />
+          <div className="mx-2 my-1 h-px bg-bg-muted" />
           <button
             type="button"
             role="menuitem"

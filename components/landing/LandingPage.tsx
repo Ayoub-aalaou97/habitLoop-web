@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BrandMark, BrandWordmark } from "@/components/BrandMark";
 import { PageLoader } from "@/components/LoadingSpinner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { getToken } from "@/lib/auth";
 import {
   landFeatures,
@@ -19,7 +20,7 @@ import {
 const btnPrimary =
   "inline-flex items-center justify-center rounded-[13px] bg-gradient-to-b from-[#7a86ff] to-[#5d69f0] px-[26px] py-4 text-[16px] font-bold text-white shadow-[0_12px_28px_-8px_rgba(111,123,255,0.65),inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:brightness-110";
 const btnGhost =
-  "inline-flex items-center justify-center rounded-[13px] border border-white/10 bg-[#15171c] px-6 py-4 text-[16px] font-semibold text-[#d3d6de] transition hover:border-white/16 hover:text-white";
+  "inline-flex items-center justify-center rounded-[13px] border border-border bg-bg-elevated px-6 py-4 text-[16px] font-semibold text-text-body transition hover:border-border hover:text-text";
 
 function FreezePips({ size = "sm" }: { size?: "sm" | "md" }) {
   const w = size === "sm" ? "h-[11px] w-[8px]" : "h-[14px] w-[11px]";
@@ -37,17 +38,17 @@ function FreezePips({ size = "sm" }: { size?: "sm" | "md" }) {
 
 function HeroPreview() {
   return (
-    <div className="landing-preview rounded-[18px] border border-white/[0.08] bg-[#0e1014] px-[22px] py-6 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)] sm:px-[26px]">
+    <div className="landing-preview rounded-[18px] border border-border bg-bg-sidebar px-[22px] py-6 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)] sm:px-[26px]">
       <div className="mb-[22px] flex items-end justify-between gap-4">
         <div>
-          <div className="text-[17px] font-bold tracking-[-0.02em] text-[#f2f3f5]">
+          <div className="text-[17px] font-bold tracking-[-0.02em] text-text-heading">
             This week on the loop
           </div>
-          <div className="mt-1 font-mono text-[12px] font-medium text-[#6b7280]">
+          <div className="mt-1 font-mono text-[12px] font-medium text-text-dim">
             30 weeks of history · 4 habits
           </div>
         </div>
-        <div className="flex flex-none items-center gap-[7px] rounded-[10px] border border-[rgba(56,189,248,0.25)] bg-[#15171c] px-[11px] py-[7px]">
+        <div className="flex flex-none items-center gap-[7px] rounded-[10px] border border-[rgba(56,189,248,0.25)] bg-bg-elevated px-[11px] py-[7px]">
           <FreezePips />
           <span className="text-[12px] font-semibold text-[#cfe9fb]">
             3 freezes
@@ -59,7 +60,7 @@ function HeroPreview() {
         {landingHabits.map((h) => (
           <div
             key={h.name}
-            className="flex items-center gap-3 rounded-[13px] border border-white/[0.06] bg-[#12141a] px-3.5 py-3 sm:gap-4 sm:px-[15px]"
+            className="flex items-center gap-3 rounded-[13px] border border-border-soft bg-bg-muted px-3.5 py-3 sm:gap-4 sm:px-[15px]"
           >
             <div className="w-[88px] flex-none sm:w-[118px]">
               <div className="mb-1 flex items-center gap-2">
@@ -67,11 +68,11 @@ function HeroPreview() {
                   className="h-[7px] w-[7px] rounded-[2px]"
                   style={{ background: h.color }}
                 />
-                <span className="truncate text-[13px] font-semibold text-[#e8e9ec] sm:text-[14px]">
+                <span className="truncate text-[13px] font-semibold text-text-heading sm:text-[14px]">
                   {h.name}
                 </span>
               </div>
-              <div className="pl-[15px] font-mono text-[10px] font-medium text-[#6b7280] sm:text-[11px]">
+              <div className="pl-[15px] font-mono text-[10px] font-medium text-text-dim sm:text-[11px]">
                 {h.goalLabel}
               </div>
             </div>
@@ -90,7 +91,7 @@ function HeroPreview() {
                           width: 9,
                           height: 9,
                           background: c,
-                          border: "1px solid rgba(255,255,255,0.04)",
+                          border: "1px solid var(--border-soft)",
                           boxSizing: "border-box",
                         }}
                       />
@@ -106,7 +107,7 @@ function HeroPreview() {
               >
                 {h.streak}
               </div>
-              <div className="font-mono text-[10px] font-medium tracking-[0.04em] text-[#5f6472]">
+              <div className="font-mono text-[10px] font-medium tracking-[0.04em] text-text-dim">
                 LOOPS
               </div>
             </div>
@@ -144,7 +145,7 @@ export function LandingPage() {
           className="pointer-events-none absolute left-1/2 top-[-360px] h-[700px] w-[min(1200px,160vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(111,123,255,0.20),rgba(111,123,255,0))]"
         />
 
-        <header className="relative flex h-[64px] items-center justify-between border-b border-white/[0.06] px-5 sm:h-[76px] sm:px-8 lg:px-14">
+        <header className="relative flex h-[64px] items-center justify-between border-b border-border-soft px-5 sm:h-[76px] sm:px-8 lg:px-14">
           <Link href="/" className="flex items-center gap-[11px]">
             <BrandMark size={30} />
             <BrandWordmark className="text-[17px]" />
@@ -155,7 +156,7 @@ export function LandingPage() {
               <a
                 key={item.href}
                 href={item.href}
-                className="text-[14px] font-medium text-[#8d92a0] transition hover:text-[#d5d8ff]"
+                className="text-[14px] font-medium text-text-muted transition hover:text-brand-soft"
               >
                 {item.label}
               </a>
@@ -163,9 +164,10 @@ export function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle compact className="hidden sm:inline-flex" />
             <Link
               href="/login"
-              className="hidden px-1 py-[9px] text-[14px] font-semibold text-[#b6bac6] transition hover:text-white sm:inline"
+              className="hidden px-1 py-[9px] text-[14px] font-semibold text-text-muted transition hover:text-text sm:inline"
             >
               Log in
             </Link>
@@ -175,10 +177,11 @@ export function LandingPage() {
             >
               Start free
             </Link>
+            <ThemeToggle compact className="sm:hidden" />
             <button
               type="button"
               aria-label="Menu"
-              className="ml-1 flex h-10 w-10 items-center justify-center rounded-[10px] border border-white/[0.08] text-[#9aa0ab] md:hidden"
+              className="ml-1 flex h-10 w-10 items-center justify-center rounded-[10px] border border-border text-text-soft md:hidden"
               onClick={() => setMenuOpen((v) => !v)}
             >
               <span className="font-mono text-[18px]">{menuOpen ? "×" : "☰"}</span>
@@ -187,21 +190,21 @@ export function LandingPage() {
         </header>
 
         {menuOpen ? (
-          <div className="relative border-b border-white/[0.06] bg-[#0e1014] px-5 py-4 md:hidden">
+          <div className="relative border-b border-border-soft bg-bg-sidebar px-5 py-4 md:hidden">
             <div className="flex flex-col gap-3">
               {landNav.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  className="text-[15px] font-medium text-[#c3c7d1]"
+                  className="text-[15px] font-medium text-text-body"
                 >
                   {item.label}
                 </a>
               ))}
               <Link
                 href="/login"
-                className="text-[15px] font-semibold text-[#aeb3f5]"
+                className="text-[15px] font-semibold text-brand-soft"
                 onClick={() => setMenuOpen(false)}
               >
                 Log in
@@ -219,11 +222,11 @@ export function LandingPage() {
               </span>
             </div>
 
-            <h1 className="mb-5 text-[40px] font-extrabold leading-[1.03] tracking-[-0.038em] text-[#f6f7f9] text-pretty sm:mb-5 sm:text-[52px] lg:text-[60px]">
+            <h1 className="mb-5 text-[40px] font-extrabold leading-[1.03] tracking-[-0.038em] text-text text-pretty sm:mb-5 sm:text-[52px] lg:text-[60px]">
               Count habits in loops,
               <br className="hidden sm:block" /> not days.
             </h1>
-            <p className="mb-8 max-w-[480px] text-[16px] font-normal leading-relaxed text-[#868b99] text-pretty sm:mb-[34px] sm:text-[18px]">
+            <p className="mb-8 max-w-[480px] text-[16px] font-normal leading-relaxed text-text-muted text-pretty sm:mb-[34px] sm:text-[18px]">
               Daily, weekly, monthly — every habit follows one rule. Hit the
               target before the period ends and the loop closes. Your streak is
               the number of periods you kept closing.
@@ -237,7 +240,7 @@ export function LandingPage() {
                 See the dashboard
               </Link>
             </div>
-            <p className="font-mono text-[12px] font-medium tracking-[0.01em] text-[#5f6472] sm:text-[13px]">
+            <p className="font-mono text-[12px] font-medium tracking-[0.01em] text-text-dim sm:text-[13px]">
               3 habits free forever · no card · export anytime
             </p>
           </div>
@@ -251,19 +254,19 @@ export function LandingPage() {
       {/* Proof strip */}
       <div
         id="product"
-        className="grid border-y border-white/[0.06] bg-[#0a0b0e] sm:grid-cols-3"
+        className="grid border-y border-border-soft bg-bg sm:grid-cols-3"
       >
         {landProof.map((p, i) => (
           <div
             key={p.label}
             className={`flex items-baseline gap-3 px-5 py-6 sm:gap-3 sm:px-8 sm:py-[26px] lg:px-14 ${
-              i > 0 ? "border-t border-white/[0.05] sm:border-t-0 sm:border-l" : ""
+              i > 0 ? "border-t border-border-soft sm:border-t-0 sm:border-l" : ""
             }`}
           >
-            <span className="text-[26px] font-extrabold tracking-[-0.03em] text-[#f2f3f5] sm:text-[30px]">
+            <span className="text-[26px] font-extrabold tracking-[-0.03em] text-text-heading sm:text-[30px]">
               {p.value}
             </span>
-            <span className="text-[13px] leading-snug text-[#767b89] sm:text-[13.5px]">
+            <span className="text-[13px] leading-snug text-text-muted sm:text-[13.5px]">
               {p.label}
             </span>
           </div>
@@ -276,10 +279,10 @@ export function LandingPage() {
           <div className="mb-3.5 font-mono text-[11px] font-semibold tracking-[0.18em] text-[#6f7bff] sm:text-[11.5px]">
             ONE RULE, EVERY RHYTHM
           </div>
-          <h2 className="mb-3.5 text-[32px] font-extrabold leading-[1.1] tracking-[-0.032em] text-[#f4f5f7] text-pretty sm:text-[40px]">
+          <h2 className="mb-3.5 text-[32px] font-extrabold leading-[1.1] tracking-[-0.032em] text-text text-pretty sm:text-[40px]">
             A period is closed, or it isn&apos;t.
           </h2>
-          <p className="m-0 text-[16px] leading-relaxed text-[#868b99] text-pretty sm:text-[17px]">
+          <p className="m-0 text-[16px] leading-relaxed text-text-muted text-pretty sm:text-[17px]">
             Most trackers punish you for having a habit that isn&apos;t daily.
             HabitLoop counts consecutive satisfied periods, so a monthly habit
             gets a real streak too.
@@ -290,7 +293,7 @@ export function LandingPage() {
           {landPeriods.map((p) => (
             <div
               key={p.kind}
-              className="rounded-2xl border border-white/[0.07] bg-[#0e1014] px-[26px] pb-6 pt-[26px]"
+              className="rounded-2xl border border-border bg-bg-sidebar px-[26px] pb-6 pt-[26px]"
             >
               <div className="mb-5 flex items-center justify-between">
                 <span
@@ -299,7 +302,7 @@ export function LandingPage() {
                 >
                   {p.kind}
                 </span>
-                <span className="font-mono text-[12px] font-medium text-[#5f6472]">
+                <span className="font-mono text-[12px] font-medium text-text-dim">
                   {p.habit}
                 </span>
               </div>
@@ -316,10 +319,10 @@ export function LandingPage() {
                   />
                 ))}
               </div>
-              <div className="mb-1.5 text-[15px] font-semibold text-[#e8e9ec]">
+              <div className="mb-1.5 text-[15px] font-semibold text-text-heading">
                 {p.rule}
               </div>
-              <div className="text-[13.5px] text-[#767b89]">
+              <div className="text-[13.5px] text-text-muted">
                 Streak reads{" "}
                 <span className="font-semibold" style={{ color: p.color }}>
                   {p.streak}
@@ -340,7 +343,7 @@ export function LandingPage() {
           {landFeatures.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-white/[0.07] bg-[#0e1014] px-7 py-7 sm:px-[30px] sm:py-7"
+              className="rounded-2xl border border-border bg-bg-sidebar px-7 py-7 sm:px-[30px] sm:py-7"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-[11px]">
@@ -351,15 +354,15 @@ export function LandingPage() {
                       boxShadow: `0 0 12px -1px ${f.accent}`,
                     }}
                   />
-                  <span className="text-[18px] font-bold tracking-[-0.02em] text-[#f2f3f5] sm:text-[19px]">
+                  <span className="text-[18px] font-bold tracking-[-0.02em] text-text-heading sm:text-[19px]">
                     {f.title}
                   </span>
                 </div>
-                <span className="flex-none rounded-[7px] bg-[#15171c] px-[9px] py-[5px] font-mono text-[10px] font-semibold tracking-[0.08em] text-[#6b7280] sm:text-[11px]">
+                <span className="flex-none rounded-[7px] bg-bg-elevated px-[9px] py-[5px] font-mono text-[10px] font-semibold tracking-[0.08em] text-text-dim sm:text-[11px]">
                   {f.tag}
                 </span>
               </div>
-              <p className="m-0 text-[15px] leading-relaxed text-[#868b99] text-pretty">
+              <p className="m-0 text-[15px] leading-relaxed text-text-muted text-pretty">
                 {f.desc}
               </p>
             </div>
@@ -372,7 +375,7 @@ export function LandingPage() {
         id="how"
         className="px-5 pb-16 sm:px-8 sm:pb-[92px] lg:px-14"
       >
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0a0b0e] px-6 py-10 sm:px-12 sm:py-11">
+        <div className="rounded-[18px] border border-border-soft bg-bg px-6 py-10 sm:px-12 sm:py-11">
           <div className="mb-[30px] font-mono text-[11px] font-semibold tracking-[0.18em] text-[#6f7bff] sm:text-[11.5px]">
             HOW IT WORKS
           </div>
@@ -380,15 +383,15 @@ export function LandingPage() {
             {landSteps.map((s) => (
               <div
                 key={s.n}
-                className="border-t border-white/10 pt-5"
+                className="border-t border-border pt-5"
               >
                 <div className="mb-3 font-mono text-[13px] font-bold tracking-[0.06em] text-[#8a92ff]">
                   {s.n}
                 </div>
-                <div className="mb-[9px] text-[20px] font-bold tracking-[-0.022em] text-[#f2f3f5]">
+                <div className="mb-[9px] text-[20px] font-bold tracking-[-0.022em] text-text-heading">
                   {s.title}
                 </div>
-                <p className="m-0 text-[15px] leading-relaxed text-[#868b99] text-pretty">
+                <p className="m-0 text-[15px] leading-relaxed text-text-muted text-pretty">
                   {s.desc}
                 </p>
               </div>
@@ -398,16 +401,16 @@ export function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative overflow-hidden border-t border-white/[0.06] px-5 py-16 sm:px-8 sm:py-[84px] lg:px-14">
+      <section className="relative overflow-hidden border-t border-border-soft px-5 py-16 sm:px-8 sm:py-[84px] lg:px-14">
         <div
           aria-hidden
           className="pointer-events-none absolute bottom-[-420px] left-1/2 h-[640px] w-[min(1100px,160vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(111,123,255,0.18),rgba(111,123,255,0))]"
         />
         <div className="relative mx-auto max-w-[620px] text-center">
-          <h2 className="mb-4 text-[32px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#f6f7f9] text-pretty sm:text-[42px]">
+          <h2 className="mb-4 text-[32px] font-extrabold leading-[1.08] tracking-[-0.035em] text-text text-pretty sm:text-[42px]">
             Close your first loop tonight.
           </h2>
-          <p className="mb-[30px] text-[16px] leading-relaxed text-[#868b99] sm:text-[17px]">
+          <p className="mb-[30px] text-[16px] leading-relaxed text-text-muted sm:text-[17px]">
             Pick a habit, set a rhythm, log one session. The streak starts at
             one.
           </p>
@@ -430,20 +433,20 @@ export function LandingPage() {
             />
           ))}
         </div>
-        <p className="relative mt-3 text-center font-mono text-[11px] font-medium tracking-[0.02em] text-[#5b6070] sm:text-[11.5px]">
+        <p className="relative mt-3 text-center font-mono text-[11px] font-medium tracking-[0.02em] text-text-dim sm:text-[11.5px]">
           every square is a period you closed
         </p>
       </section>
 
-      <footer className="flex h-[70px] flex-col items-start justify-center gap-3 border-t border-white/[0.06] bg-[#0a0b0e] px-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-14">
-        <span className="font-mono text-[12px] font-medium text-[#5f6472] sm:text-[12.5px]">
+      <footer className="flex h-[70px] flex-col items-start justify-center gap-3 border-t border-border-soft bg-bg px-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-14">
+        <span className="font-mono text-[12px] font-medium text-text-dim sm:text-[12.5px]">
           © 2026 HabitLoop
         </span>
         <div className="flex flex-wrap gap-5 sm:gap-[26px]">
           {["Privacy", "Terms", "Changelog", "Contact"].map((label) => (
             <span
               key={label}
-              className="text-[13px] font-medium text-[#767b89]"
+              className="text-[13px] font-medium text-text-muted"
             >
               {label}
             </span>

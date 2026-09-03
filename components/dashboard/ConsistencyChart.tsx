@@ -6,9 +6,9 @@ export function ConsistencyChart({
   months: ConsistencyMonth[];
 }) {
   return (
-    <section className="card consistency-card p-[20px] bg-bg-elevated border border-white/[0.06] rounded-[16px]">
+    <section className="card consistency-card p-[20px] bg-bg-elevated border border-border-soft rounded-[16px]">
       <div className="flex items-center justify-between mb-[18px]">
-        <h3 className="m-0 text-[14px] font-bold text-[#e8e9ec]">
+        <h3 className="m-0 text-[14px] font-bold text-text-heading">
           Consistency
         </h3>
         <span className="text-[11px] font-semibold font-mono text-text-dim">
@@ -23,10 +23,13 @@ export function ConsistencyChart({
             className={`month month-${idx} flex-1 h-full flex flex-col items-center justify-end`}
           >
             <div
-              className="month-fill w-full rounded-[4px] min-h-[4px]"
+              className="month-fill w-full rounded-[4px]"
               style={{
-                height: `${Math.max(2, Math.min(100, m.pct))}%`,
-                background: m.fill,
+                height: `${
+                  m.pct <= 0 ? 3 : Math.max(4, Math.min(100, m.pct))
+                }%`,
+                minHeight: m.pct <= 0 ? 3 : 4,
+                background: m.pct <= 0 ? "var(--heat-empty)" : m.fill,
               }}
             />
             <span className="month-label mt-[7px] text-[10px] font-semibold font-mono text-text-dim">

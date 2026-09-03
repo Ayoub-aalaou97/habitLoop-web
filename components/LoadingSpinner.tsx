@@ -30,10 +30,7 @@ export function LoadingSpinner({
       >
         <div
           className="absolute inset-0 rounded-full"
-          style={{
-            background:
-              "conic-gradient(from 215deg,#38bdf8,#a78bfa,#fb923c,#34d399,#38bdf8)",
-          }}
+          style={{ background: "var(--mark-conic)" }}
         />
         <div
           className="absolute rounded-full bg-bg"
@@ -43,13 +40,12 @@ export function LoadingSpinner({
           className="absolute rounded-full opacity-90"
           style={{
             inset: dim.core,
-            background:
-              "conic-gradient(from 215deg,#38bdf8,#a78bfa,#fb923c,#34d399,#38bdf8)",
+            background: "var(--mark-conic)",
           }}
         />
       </div>
       {label ? (
-        <span className="font-mono text-[12px] font-medium tracking-[0.06em] text-[#6b7280]">
+        <span className="font-mono text-[12px] font-medium tracking-[0.06em] text-text-dim">
           {label}
         </span>
       ) : null}
