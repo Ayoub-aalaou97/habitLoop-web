@@ -184,6 +184,7 @@ export default function RegisterPage() {
         <Link
           href="/login"
           className="font-semibold text-brand-soft transition hover:text-text"
+          prefetch
         >
           Log in
         </Link>
