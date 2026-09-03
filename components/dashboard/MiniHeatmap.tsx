@@ -64,7 +64,7 @@ export function MiniHeatmap({
           const isFuture = Boolean(cell.dateKey && cell.dateKey > todayKey);
           const isPastChecked =
             Boolean(cell.checked) &&
-            Boolean(cell.dateKey) &&
+            cell.dateKey != null &&
             cell.dateKey < todayKey;
           const canClick =
             Boolean(onCellClick) &&
