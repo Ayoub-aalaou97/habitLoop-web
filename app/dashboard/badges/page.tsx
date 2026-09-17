@@ -1,21 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   API_URL,
-  AuthUser,
   clearToken,
-  fetchCurrentUser,
   getToken,
 } from "@/lib/auth";
-import { ApiHabit, fetchHabits } from "@/lib/habits";
-import { ApiCheckIn, fetchHabitCheckIns } from "@/lib/checkInsApi";
-import {
-  fetchFreezes,
-  FreezesResponse,
-} from "@/lib/freezesApi";
+import { useDashboardSession } from "@/lib/useDashboardSession";
 import { BadgeItem, buildBadgesView } from "@/lib/badges";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -101,69 +94,15 @@ function MobileBadgeCard({ badge }: { badge: BadgeItem }) {
 
 export default function BadgesPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [habits, setHabits] = useState<ApiHabit[]>([]);
-  const [checkInsByHabit, setCheckInsByHabit] = useState<
-    Record<number, ApiCheckIn[]>
-  >({});
-  const [freezes, setFreezes] = useState<FreezesResponse>({
+  const { user, bundle, error, booting } = useDashboardSession();
+
+  const habits = bundle?.habits ?? [];
+  const checkInsByHabit = bundle?.checkInsByHabit ?? {};
+  const freezes = bundle?.freezes ?? {
     remaining: 3,
     total: 3,
     by_habit: {},
-  });
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [next, nextFreezes] = await Promise.all([
-        fetchHabits(),
-        fetchFreezes().catch(
-          (): FreezesResponse => ({ remaining: 3, total: 3, by_habit: {} }),
-        ),
-      ]);
-      setHabits(next);
-      setFreezes(nextFreezes);
-
-      const pairs = await Promise.all(
-        next.map(async (habit) => {
-          try {
-            const checkIns = await fetchHabitCheckIns(habit.id);
-            return [habit.id, checkIns] as const;
-          } catch {
-            return [habit.id, [] as ApiCheckIn[]] as const;
-          }
-        }),
-      );
-      setCheckInsByHabit(Object.fromEntries(pairs));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load badges.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    fetchCurrentUser(token)
-      .then((currentUser) => {
-        setUser(currentUser);
-        return load();
-      })
-      .catch(() => {
-        clearToken();
-        setError("Your session expired. Please log in again.");
-        setLoading(false);
-      });
-  }, [router, load]);
+  };
 
   const view = useMemo(
     () =>
@@ -201,7 +140,7 @@ export default function BadgesPage() {
     );
   }
 
-  if (!user || loading) {
+  if (booting || !user) {
     return <PageLoader label="Loading badges…" />;
   }
 

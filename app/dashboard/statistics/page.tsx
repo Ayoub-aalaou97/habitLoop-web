@@ -1,21 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   API_URL,
-  AuthUser,
   clearToken,
-  fetchCurrentUser,
   getToken,
 } from "@/lib/auth";
-import { ApiHabit, fetchHabits } from "@/lib/habits";
-import { ApiCheckIn, fetchHabitCheckIns } from "@/lib/checkInsApi";
-import {
-  fetchFreezes,
-  FreezesResponse,
-} from "@/lib/freezesApi";
+import { useDashboardSession } from "@/lib/useDashboardSession";
 import {
   buildStatisticsView,
   StatsRange,
@@ -64,70 +57,16 @@ function RangeToggle({
 
 export default function StatisticsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [habits, setHabits] = useState<ApiHabit[]>([]);
-  const [checkInsByHabit, setCheckInsByHabit] = useState<
-    Record<number, ApiCheckIn[]>
-  >({});
-  const [freezes, setFreezes] = useState<FreezesResponse>({
+  const { user, bundle, error, booting } = useDashboardSession();
+  const [range, setRange] = useState<StatsRange>("year");
+
+  const habits = bundle?.habits ?? [];
+  const checkInsByHabit = bundle?.checkInsByHabit ?? {};
+  const freezes = bundle?.freezes ?? {
     remaining: 3,
     total: 3,
     by_habit: {},
-  });
-  const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState<StatsRange>("year");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [next, nextFreezes] = await Promise.all([
-        fetchHabits(),
-        fetchFreezes().catch(
-          (): FreezesResponse => ({ remaining: 3, total: 3, by_habit: {} }),
-        ),
-      ]);
-      setHabits(next);
-      setFreezes(nextFreezes);
-
-      const pairs = await Promise.all(
-        next.map(async (habit) => {
-          try {
-            const checkIns = await fetchHabitCheckIns(habit.id);
-            return [habit.id, checkIns] as const;
-          } catch {
-            return [habit.id, [] as ApiCheckIn[]] as const;
-          }
-        }),
-      );
-      setCheckInsByHabit(Object.fromEntries(pairs));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load statistics.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    fetchCurrentUser(token)
-      .then((currentUser) => {
-        setUser(currentUser);
-        return load();
-      })
-      .catch(() => {
-        clearToken();
-        setError("Your session expired. Please log in again.");
-        setLoading(false);
-      });
-  }, [router, load]);
+  };
 
   const view = useMemo(
     () =>
@@ -166,7 +105,7 @@ export default function StatisticsPage() {
     );
   }
 
-  if (!user || loading) {
+  if (booting || !user) {
     return <PageLoader label="Loading statistics…" />;
   }
 
@@ -250,71 +189,158 @@ export default function StatisticsPage() {
           </div>
 
           <section className="mb-[18px] rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-6 sm:py-5">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-[18px]">
-              <div>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
+              <div className="min-w-0">
                 <h2 className="m-0 text-[15px] font-bold text-text-body">
                   Goal completion by month
                 </h2>
-                <p className="m-0 mt-0.5 font-mono text-[11px] font-medium text-text-dim">
-                  % of period goals met · all hobbies
+                <p className="m-0 mt-0.5 text-[12px] font-medium text-text-muted">
+                  Share of period goals you closed successfully — across every
+                  hobby. A period is a day, week, or month depending on each
+                  habit&apos;s frequency.
                 </p>
               </div>
-              <div className="flex items-center gap-2 rounded-[9px] bg-bg-muted px-3 py-1.5">
-                <div
-                  className="h-2.5 w-2.5 rounded-[2px]"
-                  style={{ background: "var(--chart-bar-best)" }}
-                />
-                <span
-                  className="font-mono text-[10.5px] font-semibold"
-                  style={{ color: "var(--accent-stat)" }}
-                >
-                  best month
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {view.bestMonth !== "—" ? (
+                  <div className="rounded-[9px] border border-[rgba(111,123,255,0.25)] bg-[rgba(111,123,255,0.1)] px-3 py-1.5">
+                    <span className="font-mono text-[10.5px] font-semibold text-[color:var(--accent-stat)]">
+                      Best · {view.bestMonth} {view.bestMonthPct}%
+                    </span>
+                  </div>
+                ) : null}
+                <div className="rounded-[9px] bg-bg-muted px-3 py-1.5">
+                  <span className="font-mono text-[10.5px] font-semibold text-text-soft">
+                    {view.goalsTotal === 0
+                      ? "No closed periods yet"
+                      : `${view.goalsMet}/${view.goalsTotal} met · ${view.goalsOverallPct}%`}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div
-              className="flex items-end gap-1.5 sm:gap-[11px]"
-              style={{ height: monthMaxHeight + 36 }}
-            >
-              {view.months.map((month, idx) => (
-                <div
-                  key={`${month.label}-${idx}`}
-                  className="flex h-full flex-1 flex-col items-center justify-end gap-2"
-                >
-                  <span
-                    className="font-mono text-[10px] font-bold sm:text-[10.5px]"
-                    style={{
-                      color: month.isBest
-                        ? "var(--accent-stat)"
-                        : "var(--text-muted)",
-                    }}
-                  >
-                    {month.pct}
-                  </span>
-                  <div
-                    className="w-full rounded-[5px]"
-                    style={{
-                      height: `${
-                        month.pct <= 0
-                          ? 3
-                          : Math.max(
-                              4,
-                              Math.round((month.pct / 100) * monthMaxHeight),
-                            )
-                      }px`,
-                      background:
-                        month.pct <= 0
-                          ? "var(--heat-empty)"
-                          : month.fill,
-                    }}
-                  />
-                  <span className="font-mono text-[10px] font-semibold text-text-dim">
-                    {month.label}
-                  </span>
-                </div>
-              ))}
+            <div className="mb-4 flex flex-wrap gap-3 text-[11px] font-medium text-text-dim">
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-[2px]"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(52,211,153,0.85), rgba(52,211,153,0.35))",
+                  }}
+                />
+                80%+ solid
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-[2px]"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(138,146,255,0.75), rgba(111,123,255,0.35))",
+                  }}
+                />
+                50–79%
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-[2px]"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(251,146,60,0.7), rgba(251,146,60,0.28))",
+                  }}
+                />
+                Under 50%
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-[2px]"
+                  style={{ background: "var(--chart-bar-best)" }}
+                />
+                Best month
+              </span>
             </div>
+
+            {view.goalsTotal === 0 ? (
+              <p className="m-0 rounded-[12px] border border-dashed border-border bg-bg-muted/60 px-4 py-8 text-center text-[13px] font-medium text-text-muted">
+                Once you complete (or miss) habit periods, this chart fills in
+                month by month.
+              </p>
+            ) : (
+              <div
+                className="flex items-end gap-1 sm:gap-2"
+                style={{ height: monthMaxHeight + 52 }}
+              >
+                {view.months.map((month) => {
+                  const muted = !month.inRange;
+                  const barHeight =
+                    month.total === 0
+                      ? 3
+                      : Math.max(
+                          6,
+                          Math.round((month.pct / 100) * monthMaxHeight),
+                        );
+                  return (
+                    <div
+                      key={month.shortLabel}
+                      className="group relative flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+                      title={
+                        month.total === 0
+                          ? `${month.shortLabel}: no closed periods`
+                          : `${month.shortLabel}: ${month.met} of ${month.total} goals met (${month.pct}%)`
+                      }
+                    >
+                      <span
+                        className="font-mono text-[10px] font-bold sm:text-[11px]"
+                        style={{
+                          color: month.isBest
+                            ? "var(--accent-stat)"
+                            : muted
+                              ? "var(--text-dim)"
+                              : "var(--text-muted)",
+                          opacity: muted ? 0.55 : 1,
+                        }}
+                      >
+                        {month.total === 0 ? "—" : `${month.pct}%`}
+                      </span>
+                      <div
+                        className="relative w-full overflow-hidden rounded-[6px]"
+                        style={{
+                          height: `${barHeight}px`,
+                          background: month.fill,
+                          opacity: muted ? 0.35 : 1,
+                          boxShadow: month.isCurrent
+                            ? "0 0 0 1.5px rgba(111,123,255,0.45)"
+                            : undefined,
+                        }}
+                      />
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span
+                          className={`font-mono text-[10px] font-semibold ${
+                            month.isCurrent
+                              ? "text-[color:var(--accent-stat)]"
+                              : "text-text-dim"
+                          }`}
+                          style={{ opacity: muted ? 0.5 : 1 }}
+                        >
+                          <span className="sm:hidden">{month.label}</span>
+                          <span className="hidden sm:inline">
+                            {month.shortLabel}
+                          </span>
+                        </span>
+                        {month.total > 0 ? (
+                          <span
+                            className="hidden font-mono text-[9px] font-medium text-text-dim sm:block"
+                            style={{ opacity: muted ? 0.45 : 0.85 }}
+                          >
+                            {month.met}/{month.total}
+                          </span>
+                        ) : (
+                          <span className="hidden h-[12px] sm:block" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.9fr_0.85fr] lg:gap-4">
@@ -323,7 +349,7 @@ export default function StatisticsPage() {
                 By hobby
               </h2>
               <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
-                sessions logged &amp; goal completion
+                sessions logged &amp; goal completion in this range
               </p>
 
               {view.hobbies.length === 0 ? (
@@ -375,36 +401,76 @@ export default function StatisticsPage() {
             </section>
 
             <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-[18px]">
-              <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
-                When you show up
-              </h2>
-              <p className="m-0 mb-4 font-mono text-[11px] font-medium text-text-dim">
-                sessions by weekday
-              </p>
-              <div className="flex h-[112px] items-end gap-2">
-                {view.weekdays.map((day, idx) => (
-                  <div
-                    key={`${day.label}-${idx}`}
-                    className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
-                  >
-                    <span className="font-mono text-[10.5px] font-bold text-text-muted">
-                      {day.value}
-                    </span>
-                    <div
-                      className="w-full rounded-[5px]"
-                      style={{
-                        height: `${Math.max(4, Math.round((day.pctHeight / 100) * 84))}px`,
-                        background: day.isMax
-                          ? "var(--chart-bar-best)"
-                          : "rgba(111,123,255,0.38)",
-                      }}
-                    />
-                    <span className="font-mono text-[10px] font-semibold text-text-dim">
-                      {day.label}
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="m-0 mb-0.5 text-[14.5px] font-bold text-text-body">
+                    When you show up
+                  </h2>
+                  <p className="m-0 font-mono text-[11px] font-medium text-text-dim">
+                    sessions by weekday · this range
+                  </p>
+                </div>
+                {view.peakWeekday ? (
+                  <div className="rounded-[8px] bg-bg-muted px-2.5 py-1">
+                    <span className="font-mono text-[10px] font-semibold text-[color:var(--accent-stat)]">
+                      Peak · {view.peakWeekday}
                     </span>
                   </div>
-                ))}
+                ) : null}
               </div>
+
+              {view.weekdays.every((day) => day.value === 0) ? (
+                <p className="m-0 rounded-[12px] border border-dashed border-border bg-bg-muted/60 px-3 py-8 text-center text-[12.5px] font-medium text-text-muted">
+                  No sessions in this range yet.
+                </p>
+              ) : (
+                <div className="flex h-[128px] items-end gap-2">
+                  {view.weekdays.map((day) => (
+                    <div
+                      key={day.fullLabel}
+                      className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+                      title={`${day.fullLabel}: ${day.value} sessions (${day.sharePct}% of all)`}
+                    >
+                      <span
+                        className="font-mono text-[10.5px] font-bold"
+                        style={{
+                          color: day.isMax
+                            ? "var(--accent-stat)"
+                            : "var(--text-muted)",
+                        }}
+                      >
+                        {day.value}
+                      </span>
+                      <div
+                        className="w-full rounded-[5px]"
+                        style={{
+                          height: `${Math.max(
+                            4,
+                            Math.round((day.pctHeight / 100) * 88),
+                          )}px`,
+                          background: day.isMax
+                            ? "var(--chart-bar-best)"
+                            : "rgba(111,123,255,0.38)",
+                          boxShadow: day.isMax
+                            ? "0 6px 14px -6px rgba(111,123,255,0.55)"
+                            : undefined,
+                        }}
+                      />
+                      <span
+                        className="font-mono text-[10px] font-semibold"
+                        style={{
+                          color: day.isMax
+                            ? "var(--accent-stat)"
+                            : "var(--text-dim)",
+                        }}
+                      >
+                        <span className="sm:hidden">{day.label}</span>
+                        <span className="hidden sm:inline">{day.fullLabel}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className="rounded-[18px] border border-border-soft bg-bg-elevated px-4 py-5 sm:px-[22px] sm:py-[18px]">

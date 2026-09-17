@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityWeek } from "@/lib/habitDetailMock";
-import { habitColorWithAlpha } from "@/lib/habitDetailMock";
+import { habitColorWithAlpha } from "@/lib/color";
 
 const LABEL_W = 32;
 const GAP = 3;

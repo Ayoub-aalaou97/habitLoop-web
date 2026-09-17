@@ -8,7 +8,7 @@ import {
   MOODS,
   toDateKey,
 } from "@/lib/checkIn";
-import { habitColorWithAlpha } from "@/lib/habitDetailMock";
+import { habitColorWithAlpha } from "@/lib/color";
 import { periodNoun, type HabitPeriod } from "@/lib/periodStreak";
 import { SheetPortal } from "@/components/dashboard/SheetPortal";
 

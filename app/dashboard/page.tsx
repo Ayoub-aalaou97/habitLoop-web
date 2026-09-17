@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   API_URL,
-  AuthUser,
   clearToken,
-  fetchCurrentUser,
   getToken,
 } from "@/lib/auth";
-import { dashboardMock } from "@/lib/dashboardMock";
 import {
   ApiHabit,
   apiHabitToCard,
@@ -17,21 +15,24 @@ import {
   createHabit,
   deleteHabit,
   draftToCreatePayload,
-  fetchHabits,
   updateHabit,
 } from "@/lib/habits";
 import {
   ApiCheckIn,
   createHabitCheckIn,
   deleteHabitCheckIn,
-  fetchHabitCheckIns,
 } from "@/lib/checkInsApi";
 import {
-  fetchFreezes,
   frozenKeysForHabit,
   FreezesResponse,
 } from "@/lib/freezesApi";
+import {
+  invalidateDashboardCache,
+  patchDashboardCache,
+} from "@/lib/dashboardData";
+import { useDashboardSession } from "@/lib/useDashboardSession";
 import { goalFromHabit, type HabitPeriod } from "@/lib/periodStreak";
+import { buildStatisticsView } from "@/lib/statistics";
 import { LoadingSpinner, PageLoader } from "@/components/LoadingSpinner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { HobbyCard } from "@/components/dashboard/HobbyCard";
@@ -40,87 +41,98 @@ import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
 import { StreakFreezesCard } from "@/components/dashboard/StreakFreezesCard";
 import { ConsistencyChart } from "@/components/dashboard/ConsistencyChart";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  CreateHabitDraft,
-  CreateHabitModal,
-} from "@/components/dashboard/CreateHabitModal";
-import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
-import { LogSessionModal } from "@/components/dashboard/LogSessionModal";
+import type { CreateHabitDraft } from "@/components/dashboard/CreateHabitModal";
 import type { CheckInDraft } from "@/lib/checkIn";
 import { toDateKey } from "@/lib/checkIn";
 
+const CreateHabitModal = dynamic(
+  () =>
+    import("@/components/dashboard/CreateHabitModal").then((m) => m.CreateHabitModal),
+  { ssr: false },
+);
+const ConfirmDialog = dynamic(
+  () =>
+    import("@/components/dashboard/ConfirmDialog").then((m) => m.ConfirmDialog),
+  { ssr: false },
+);
+const LogSessionModal = dynamic(
+  () =>
+    import("@/components/dashboard/LogSessionModal").then((m) => m.LogSessionModal),
+  { ssr: false },
+);
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    user,
+    bundle,
+    setBundle,
+    error,
+    setError,
+    booting,
+  } = useDashboardSession();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<ApiHabit | null>(null);
   const [deletingHabit, setDeletingHabit] = useState<ApiHabit | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [habits, setHabits] = useState<ApiHabit[]>([]);
-  const [checkInsByHabit, setCheckInsByHabit] = useState<
-    Record<number, ApiCheckIn[]>
-  >({});
-  const [freezes, setFreezes] = useState<FreezesResponse | null>(null);
-  const [habitsLoading, setHabitsLoading] = useState(true);
+  const habits = bundle?.habits ?? [];
+  const checkInsByHabit = bundle?.checkInsByHabit ?? {};
+  const freezes = bundle?.freezes ?? null;
   const [habitsError, setHabitsError] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
   const [logHabitId, setLogHabitId] = useState<number | null>(null);
   const [logDateKey, setLogDateKey] = useState<string | null>(null);
   const [logMode, setLogMode] = useState<"create" | "edit">("create");
 
-  const loadHabits = useCallback(async () => {
-    setHabitsLoading(true);
-    setHabitsError(null);
+  function setHabits(updater: ApiHabit[] | ((prev: ApiHabit[]) => ApiHabit[])) {
+    setBundle((prev) => {
+      if (!prev) return prev;
+      const nextHabits =
+        typeof updater === "function" ? updater(prev.habits) : updater;
+      const next = { ...prev, habits: nextHabits, fetchedAt: Date.now() };
+      patchDashboardCache(() => next);
+      return next;
+    });
+  }
 
-    try {
-      const [next, nextFreezes] = await Promise.all([
-        fetchHabits(),
-        fetchFreezes().catch((): FreezesResponse | null => null),
-      ]);
-      setHabits(next);
-      setFreezes(
-        nextFreezes ?? { remaining: 0, total: 3, by_habit: {} },
-      );
+  function setCheckInsByHabit(
+    updater:
+      | Record<number, ApiCheckIn[]>
+      | ((prev: Record<number, ApiCheckIn[]>) => Record<number, ApiCheckIn[]>),
+  ) {
+    setBundle((prev) => {
+      if (!prev) return prev;
+      const nextMap =
+        typeof updater === "function"
+          ? updater(prev.checkInsByHabit)
+          : updater;
+      const next = {
+        ...prev,
+        checkInsByHabit: nextMap,
+        fetchedAt: Date.now(),
+      };
+      patchDashboardCache(() => next);
+      return next;
+    });
+  }
 
-      const pairs = await Promise.all(
-        next.map(async (habit) => {
-          try {
-            const checkIns = await fetchHabitCheckIns(habit.id);
-            return [habit.id, checkIns] as const;
-          } catch {
-            return [habit.id, [] as ApiCheckIn[]] as const;
-          }
-        }),
-      );
-      setCheckInsByHabit(Object.fromEntries(pairs));
-    } catch (err) {
-      setHabitsError(
-        err instanceof Error ? err.message : "Could not load habits.",
-      );
-    } finally {
-      setHabitsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const token = getToken();
-
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    fetchCurrentUser(token)
-      .then((currentUser) => {
-        setUser(currentUser);
-        return loadHabits();
-      })
-      .catch(() => {
-        clearToken();
-        setError("Your session expired. Please log in again.");
-      });
-  }, [router, loadHabits]);
+  function setFreezes(
+    updater:
+      | FreezesResponse
+      | null
+      | ((prev: FreezesResponse | null) => FreezesResponse | null),
+  ) {
+    setBundle((prev) => {
+      if (!prev) return prev;
+      const nextFreezes =
+        typeof updater === "function" ? updater(prev.freezes) : updater;
+      if (!nextFreezes) return prev;
+      const next = { ...prev, freezes: nextFreezes, fetchedAt: Date.now() };
+      patchDashboardCache(() => next);
+      return next;
+    });
+  }
 
   async function logout() {
     const token = getToken();
@@ -136,6 +148,7 @@ export default function DashboardPage() {
     }
 
     clearToken();
+    invalidateDashboardCache();
     router.replace("/login");
   }
 
@@ -159,14 +172,29 @@ export default function DashboardPage() {
 
     if (editingHabit) {
       const updated = await updateHabit(editingHabit.id, payload);
-      setHabits((prev) =>
-        prev.map((h) => (h.id === updated.id ? updated : h)),
-      );
+      setHabits((prev) => {
+        const next = prev.map((h) => (h.id === updated.id ? updated : h));
+        patchDashboardCache((cache) => ({
+          ...cache,
+          habits: next,
+          fetchedAt: Date.now(),
+        }));
+        return next;
+      });
       return;
     }
 
     const created = await createHabit(payload);
-    setHabits((prev) => [created, ...prev]);
+    setHabits((prev) => {
+      const next = [created, ...prev];
+      patchDashboardCache((cache) => ({
+        ...cache,
+        habits: next,
+        checkInsByHabit: { ...cache.checkInsByHabit, [created.id]: [] },
+        fetchedAt: Date.now(),
+      }));
+      return next;
+    });
     setCheckInsByHabit((prev) => ({ ...prev, [created.id]: [] }));
   }
 
@@ -183,6 +211,12 @@ export default function DashboardPage() {
         const next = { ...prev };
         delete next[deletingHabit.id];
         return next;
+      });
+      patchDashboardCache((cache) => {
+        const habits = cache.habits.filter((h) => h.id !== deletingHabit.id);
+        const checkInsByHabit = { ...cache.checkInsByHabit };
+        delete checkInsByHabit[deletingHabit.id];
+        return { ...cache, habits, checkInsByHabit, fetchedAt: Date.now() };
       });
       setDeletingHabit(null);
     } catch (err) {
@@ -247,7 +281,14 @@ export default function DashboardPage() {
     setCheckInsByHabit((prev) => {
       const list = prev[habit.id] ?? [];
       const withoutSameDay = list.filter((item) => item.date !== created.date);
-      return { ...prev, [habit.id]: [created, ...withoutSameDay] };
+      const nextList = [created, ...withoutSameDay];
+      const nextMap = { ...prev, [habit.id]: nextList };
+      patchDashboardCache((cache) => ({
+        ...cache,
+        checkInsByHabit: nextMap,
+        fetchedAt: Date.now(),
+      }));
+      return nextMap;
     });
 
     if (created.freeze) {
@@ -259,7 +300,7 @@ export default function DashboardPage() {
           freeze.period_key && !keys.includes(freeze.period_key)
             ? [...keys, freeze.period_key]
             : keys;
-        return {
+        const next = {
           remaining: freeze.remaining,
           total: freeze.total,
           by_habit: {
@@ -267,6 +308,12 @@ export default function DashboardPage() {
             [String(habit.id)]: nextKeys,
           },
         };
+        patchDashboardCache((cache) => ({
+          ...cache,
+          freezes: next,
+          fetchedAt: Date.now(),
+        }));
+        return next;
       });
     }
   }
@@ -284,12 +331,20 @@ export default function DashboardPage() {
     }
 
     await deleteHabitCheckIn(logHabitId, existing.id);
-    setCheckInsByHabit((prev) => ({
-      ...prev,
-      [logHabitId]: (prev[logHabitId] ?? []).filter(
-        (item) => item.id !== existing.id,
-      ),
-    }));
+    setCheckInsByHabit((prev) => {
+      const nextMap = {
+        ...prev,
+        [logHabitId]: (prev[logHabitId] ?? []).filter(
+          (item) => item.id !== existing.id,
+        ),
+      };
+      patchDashboardCache((cache) => ({
+        ...cache,
+        checkInsByHabit: nextMap,
+        fetchedAt: Date.now(),
+      }));
+      return nextMap;
+    });
   }
 
   const habitCards = useMemo(
@@ -301,6 +356,17 @@ export default function DashboardPage() {
           frozenKeysForHabit(freezes?.by_habit ?? {}, habit.id),
         ),
       ),
+    [habits, checkInsByHabit, freezes?.by_habit],
+  );
+
+  const yearStats = useMemo(
+    () =>
+      buildStatisticsView({
+        habits,
+        checkInsByHabit,
+        frozenByHabit: freezes?.by_habit ?? {},
+        range: "year",
+      }),
     [habits, checkInsByHabit, freezes?.by_habit],
   );
 
@@ -316,41 +382,30 @@ export default function DashboardPage() {
       return best;
     }, null);
 
-    const completionRate =
-      cards.length === 0
-        ? 0
-        : Math.round(
-            cards.reduce((sum, card) => sum + card.consistency, 0) /
-              cards.length,
-          );
-
-    const monthCounts = new Map<string, number>();
-    for (const list of Object.values(checkInsByHabit)) {
-      for (const item of list) {
-        const key = item.date.slice(0, 7);
-        monthCounts.set(key, (monthCounts.get(key) ?? 0) + 1);
-      }
-    }
-    let bestMonth = "—";
-    let bestCount = 0;
-    for (const [key, count] of monthCounts) {
-      if (count > bestCount) {
-        bestCount = count;
-        const [y, m] = key.split("-").map(Number);
-        bestMonth = new Date(y!, (m ?? 1) - 1, 1).toLocaleString("en-US", {
-          month: "long",
-        });
-      }
-    }
-
     return {
       activeStreak: top?.streak ?? 0,
       activeStreakUnit: top?.unit.replace(" streak", "s") ?? "days",
-      completionRate,
+      completionRate: yearStats.goalsOverallPct,
       totalSessions,
-      bestMonth,
+      bestMonth: yearStats.bestMonth,
     };
-  }, [habitCards, checkInsByHabit]);
+  }, [habitCards, checkInsByHabit, yearStats]);
+
+  const consistencyMonths = useMemo(
+    () =>
+      yearStats.months.map((month) => ({
+        label: month.label,
+        shortLabel: month.shortLabel,
+        pct: month.pct,
+        fill: month.fill,
+        met: month.met,
+        total: month.total,
+        isBest: month.isBest,
+        isCurrent: month.isCurrent,
+        inRange: month.inRange,
+      })),
+    [yearStats.months],
+  );
 
   const greetingDateLine = useMemo(() => {
     const weekday = new Intl.DateTimeFormat("en-US", {
@@ -418,7 +473,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
+  if (booting || !user) {
     return <PageLoader label="Loading dashboard…" />;
   }
 
@@ -582,7 +637,7 @@ export default function DashboardPage() {
                 </p>
               ) : null}
 
-              {habitsLoading ? (
+              {booting ? (
                 <div className="flex justify-center py-12">
                   <LoadingSpinner size="md" label="Loading habits…" />
                 </div>
@@ -622,7 +677,7 @@ export default function DashboardPage() {
                 remaining={freezesRemaining}
                 loading={!freezesReady}
               />
-              <ConsistencyChart months={dashboardMock.consistencyMonthly} />
+              <ConsistencyChart months={consistencyMonths} />
             </div>
           </div>
         </div>
@@ -635,7 +690,7 @@ export default function DashboardPage() {
               </p>
             ) : null}
 
-            {habitsLoading ? (
+            {booting ? (
               <div className="flex justify-center py-10">
                 <LoadingSpinner size="md" label="Loading habits…" />
               </div>

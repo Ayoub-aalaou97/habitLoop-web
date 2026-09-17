@@ -2,12 +2,15 @@ import type { ApiHabit } from "@/lib/habits";
 import { habitGoalLabel } from "@/lib/habits";
 import type { ApiCheckIn } from "@/lib/checkInsApi";
 import { normalizeCheckInDate } from "@/lib/checkInsApi";
+import { habitColorWithAlpha } from "@/lib/color";
 import {
   computePeriodStats,
   goalFromHabit,
   loopStatusForMonth,
   loopStatusForWeek,
 } from "@/lib/periodStreak";
+
+export { habitColorWithAlpha };
 
 export type ActivityDayCell = {
   color: string;
@@ -364,9 +367,4 @@ export function buildHabitDetailView(
     checkIns: recent,
     loggedDateKeys,
   };
-}
-
-export function habitColorWithAlpha(hex: string, alpha: number): string {
-  const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r},${g},${b},${alpha})`;
 }

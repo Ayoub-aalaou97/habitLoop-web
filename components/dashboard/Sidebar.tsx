@@ -136,6 +136,7 @@ export function Sidebar({
               <Link
                 key={item.label}
                 href={item.href}
+                prefetch
                 title={item.label}
                 className={`nav-item group flex items-center rounded-lg transition ${
                   collapsed

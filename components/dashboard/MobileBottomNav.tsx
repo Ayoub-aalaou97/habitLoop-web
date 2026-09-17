@@ -22,7 +22,7 @@ function NavTab({
   icon: ReactNode;
 }) {
   return (
-    <Link href={href} className="flex flex-1 flex-col items-center gap-[5px]">
+    <Link href={href} prefetch className="flex flex-1 flex-col items-center gap-[5px]">
       <span className={active ? "text-brand-soft" : "text-text-dim"}>
         {icon}
       </span>

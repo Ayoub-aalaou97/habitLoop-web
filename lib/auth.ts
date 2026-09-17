@@ -2,6 +2,7 @@ export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 const TOKEN_KEY = "habitloop_token";
+const USER_KEY = "habitloop_user";
 
 export type AuthUser = {
   id: number;
@@ -29,8 +30,40 @@ export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+export function saveCachedUser(user: AuthUser) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch {
+    // ignore
+  }
+}
+
+export function getCachedUser(): AuthUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AuthUser;
+    if (!parsed?.id || !parsed?.email) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearCachedUser() {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(USER_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  clearCachedUser();
 }
 
 export async function fetchCurrentUser(token: string): Promise<AuthUser> {
@@ -45,7 +78,9 @@ export async function fetchCurrentUser(token: string): Promise<AuthUser> {
     throw new Error(`Request failed with status ${res.status}`);
   }
 
-  return res.json();
+  const user = (await res.json()) as AuthUser;
+  saveCachedUser(user);
+  return user;
 }
 
 export async function loginWithEmail(
@@ -71,6 +106,7 @@ export async function loginWithEmail(
     throw new Error(fieldError || data.message || "Login failed.");
   }
 
+  if (data.user) saveCachedUser(data.user);
   return data;
 }
 
@@ -104,6 +140,7 @@ export async function registerWithEmail(
     throw new Error(fieldError || data.message || "Registration failed.");
   }
 
+  if (data.user) saveCachedUser(data.user);
   return data;
 }
 
