@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MiniHeatCell } from "@/lib/dashboardMock";
+import { MiniHeatCell } from "@/lib/dashboardTypes";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 

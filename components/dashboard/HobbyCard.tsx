@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { memo, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardHobby } from "@/lib/dashboardMock";
+import { DashboardHobby } from "@/lib/dashboardTypes";
 import { MiniHeatmap } from "@/components/dashboard/MiniHeatmap";
 
 function LoopRing({
@@ -49,7 +49,7 @@ function LoopRing({
   );
 }
 
-export function HobbyCard({
+export const HobbyCard = memo(function HobbyCard({
   hobby,
   variant,
   href,
@@ -264,4 +264,4 @@ export function HobbyCard({
       <MiniHeatmap mini={hobby.mini} onCellClick={onMiniCellClick} />
     </div>
   );
-}
+});

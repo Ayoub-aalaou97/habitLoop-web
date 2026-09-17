@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,9 +8,15 @@ import {
   AuthUser,
   clearToken,
   fetchCurrentUser,
+  getCachedUser,
   getToken,
 } from "@/lib/auth";
-import { ApiHabit, fetchHabits } from "@/lib/habits";
+import { ApiHabit } from "@/lib/habits";
+import {
+  peekStaleDashboardCache,
+  loadDashboardBundle,
+  revalidateDashboardBundle,
+} from "@/lib/dashboardData";
 import {
   buildReminderRows,
   buildUpNext,
@@ -112,32 +118,23 @@ function DayChip({
 
 export default function RemindersPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => getCachedUser());
   const [error, setError] = useState<string | null>(null);
-  const [habits, setHabits] = useState<ApiHabit[]>([]);
-  const [rows, setRows] = useState<ReminderRow[]>([]);
+  const [habits, setHabits] = useState<ApiHabit[]>(
+    () => peekStaleDashboardCache()?.habits ?? [],
+  );
+  const [rows, setRows] = useState<ReminderRow[]>(() => {
+    const cachedHabits = peekStaleDashboardCache()?.habits ?? [];
+    return cachedHabits.length ? buildReminderRows(cachedHabits) : [];
+  });
   const [general, setGeneral] = useState<ReminderGeneral>(readGeneral());
   const [channels, setChannels] = useState<ReminderChannel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    return !(getCachedUser() && peekStaleDashboardCache()?.habits);
+  });
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await fetchHabits();
-      setHabits(next);
-      setRows(buildReminderRows(next));
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not load reminders.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     const token = getToken();
@@ -146,23 +143,64 @@ export default function RemindersPage() {
       return;
     }
 
-    fetchCurrentUser(token)
-      .then((currentUser) => {
-        setUser(currentUser);
-        setChannels(
-          readChannels(
-            currentUser.email ? currentUser.email : "your email",
-          ),
-        );
-        setGeneral(readGeneral());
-        return load();
-      })
-      .catch(() => {
-        clearToken();
-        setError("Your session expired. Please log in again.");
-        setLoading(false);
-      });
-  }, [router, load]);
+    let cancelled = false;
+    const cachedUser = getCachedUser();
+    const stale = peekStaleDashboardCache();
+    const hadPaint = Boolean(cachedUser && stale?.habits);
+
+    if (hadPaint && stale) {
+      setChannels(
+        readChannels(cachedUser!.email ? cachedUser!.email : "your email"),
+      );
+      Promise.all([fetchCurrentUser(token), revalidateDashboardBundle()])
+        .then(([currentUser, bundle]) => {
+          if (cancelled) return;
+          setUser(currentUser);
+          setChannels(
+            readChannels(
+              currentUser.email ? currentUser.email : "your email",
+            ),
+          );
+          setHabits(bundle.habits);
+          setRows(buildReminderRows(bundle.habits));
+          setLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          clearToken();
+          setError("Your session expired. Please log in again.");
+          setLoading(false);
+        });
+    } else {
+      Promise.all([
+        fetchCurrentUser(token),
+        loadDashboardBundle().then((b) => b.habits),
+      ])
+        .then(([currentUser, nextHabits]) => {
+          if (cancelled) return;
+          setUser(currentUser);
+          setChannels(
+            readChannels(
+              currentUser.email ? currentUser.email : "your email",
+            ),
+          );
+          setGeneral(readGeneral());
+          setHabits(nextHabits);
+          setRows(buildReminderRows(nextHabits));
+          setLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          clearToken();
+          setError("Your session expired. Please log in again.");
+          setLoading(false);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const activeCount = rows.filter((row) => row.enabled).length;
   const upNext = useMemo(() => buildUpNext(rows), [rows]);

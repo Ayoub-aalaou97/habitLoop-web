@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BrandMark, BrandWordmark } from "@/components/BrandMark";
+import { AuthModal, type AuthMode } from "@/components/auth/AuthModal";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getToken } from "@/lib/auth";
@@ -21,6 +22,11 @@ const btnPrimary =
   "inline-flex items-center justify-center rounded-[13px] bg-gradient-to-b from-[#7a86ff] to-[#5d69f0] px-[26px] py-4 text-[16px] font-bold text-white shadow-[0_12px_28px_-8px_rgba(111,123,255,0.65),inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:brightness-110";
 const btnGhost =
   "inline-flex items-center justify-center rounded-[13px] border border-border bg-bg-elevated px-6 py-4 text-[16px] font-semibold text-text-body transition hover:border-border hover:text-text";
+
+function parseAuthMode(value: string | null): AuthMode | null {
+  if (value === "login" || value === "register") return value;
+  return null;
+}
 
 function FreezePips({ size = "sm" }: { size?: "sm" | "md" }) {
   const w = size === "sm" ? "h-[11px] w-[8px]" : "h-[14px] w-[11px]";
@@ -120,8 +126,29 @@ function HeroPreview() {
 
 export function LandingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [checking, setChecking] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const authMode = parseAuthMode(searchParams.get("auth"));
+
+  const openAuth = useCallback(
+    (mode: AuthMode) => {
+      setMenuOpen(false);
+      router.push(`/?auth=${mode}`, { scroll: false });
+    },
+    [router],
+  );
+
+  const closeAuth = useCallback(() => {
+    router.push("/", { scroll: false });
+  }, [router]);
+
+  const setAuthMode = useCallback(
+    (mode: AuthMode) => {
+      router.replace(`/?auth=${mode}`, { scroll: false });
+    },
+    [router],
+  );
 
   useEffect(() => {
     const token = getToken();
@@ -138,7 +165,6 @@ export function LandingPage() {
 
   return (
     <div className="landing min-h-dvh overflow-x-hidden bg-bg text-text">
-      {/* Hero */}
       <div className="relative overflow-hidden">
         <div
           aria-hidden
@@ -165,18 +191,20 @@ export function LandingPage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle compact className="hidden sm:inline-flex" />
-            <Link
-              href="/login"
+            <button
+              type="button"
+              onClick={() => openAuth("login")}
               className="hidden px-1 py-[9px] text-[14px] font-semibold text-text-muted transition hover:text-text sm:inline"
             >
               Log in
-            </Link>
-            <Link
-              href="/register"
+            </button>
+            <button
+              type="button"
+              onClick={() => openAuth("register")}
               className="rounded-[11px] bg-gradient-to-b from-[#7a86ff] to-[#5d69f0] px-3.5 py-2.5 text-[13px] font-bold text-white shadow-[0_8px_20px_-8px_rgba(111,123,255,0.7),inset_0_1px_0_rgba(255,255,255,0.25)] sm:px-[18px] sm:text-[14px]"
             >
               Start free
-            </Link>
+            </button>
             <ThemeToggle compact className="sm:hidden" />
             <button
               type="button"
@@ -202,13 +230,13 @@ export function LandingPage() {
                   {item.label}
                 </a>
               ))}
-              <Link
-                href="/login"
-                className="text-[15px] font-semibold text-brand-soft"
-                onClick={() => setMenuOpen(false)}
+              <button
+                type="button"
+                className="text-left text-[15px] font-semibold text-brand-soft"
+                onClick={() => openAuth("login")}
               >
                 Log in
-              </Link>
+              </button>
             </div>
           </div>
         ) : null}
@@ -233,12 +261,20 @@ export function LandingPage() {
             </p>
 
             <div className="mb-5 flex flex-col gap-3 sm:mb-[22px] sm:flex-row sm:items-center sm:gap-3.5">
-              <Link href="/register" className={btnPrimary}>
+              <button
+                type="button"
+                onClick={() => openAuth("register")}
+                className={btnPrimary}
+              >
                 Start your first loop
-              </Link>
-              <Link href="/login" className={btnGhost}>
+              </button>
+              <button
+                type="button"
+                onClick={() => openAuth("login")}
+                className={btnGhost}
+              >
                 See the dashboard
-              </Link>
+              </button>
             </div>
             <p className="font-mono text-[12px] font-medium tracking-[0.01em] text-text-dim sm:text-[13px]">
               3 habits free forever · no card · export anytime
@@ -251,7 +287,6 @@ export function LandingPage() {
         </section>
       </div>
 
-      {/* Proof strip */}
       <div
         id="product"
         className="grid border-y border-border-soft bg-bg sm:grid-cols-3"
@@ -273,7 +308,6 @@ export function LandingPage() {
         ))}
       </div>
 
-      {/* Periods */}
       <section className="px-5 py-16 sm:px-8 sm:py-[82px] lg:px-14">
         <div className="mb-10 max-w-[640px] sm:mb-11">
           <div className="mb-3.5 font-mono text-[11px] font-semibold tracking-[0.18em] text-[#6f7bff] sm:text-[11.5px]">
@@ -334,7 +368,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
       <section
         id="features"
         className="px-5 pb-16 sm:px-8 sm:pb-[88px] lg:px-14"
@@ -370,7 +403,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
       <section
         id="how"
         className="px-5 pb-16 sm:px-8 sm:pb-[92px] lg:px-14"
@@ -381,10 +413,7 @@ export function LandingPage() {
           </div>
           <div className="grid gap-8 md:grid-cols-3 md:gap-8">
             {landSteps.map((s) => (
-              <div
-                key={s.n}
-                className="border-t border-border pt-5"
-              >
+              <div key={s.n} className="border-t border-border pt-5">
                 <div className="mb-3 font-mono text-[13px] font-bold tracking-[0.06em] text-[#8a92ff]">
                   {s.n}
                 </div>
@@ -400,7 +429,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="relative overflow-hidden border-t border-border-soft px-5 py-16 sm:px-8 sm:py-[84px] lg:px-14">
         <div
           aria-hidden
@@ -415,12 +443,20 @@ export function LandingPage() {
             one.
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-3.5">
-            <Link href="/register" className={btnPrimary}>
+            <button
+              type="button"
+              onClick={() => openAuth("register")}
+              className={btnPrimary}
+            >
               Start free
-            </Link>
-            <Link href="/login" className={btnGhost}>
+            </button>
+            <button
+              type="button"
+              onClick={() => openAuth("login")}
+              className={btnGhost}
+            >
               Log in
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -453,6 +489,13 @@ export function LandingPage() {
           ))}
         </div>
       </footer>
+
+      <AuthModal
+        open={authMode !== null}
+        mode={authMode ?? "login"}
+        onClose={closeAuth}
+        onModeChange={setAuthMode}
+      />
     </div>
   );
 }

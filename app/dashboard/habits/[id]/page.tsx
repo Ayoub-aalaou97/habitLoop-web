@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -8,6 +8,7 @@ import {
   AuthUser,
   clearToken,
   fetchCurrentUser,
+  getCachedUser,
   getToken,
 } from "@/lib/auth";
 import {
@@ -19,6 +20,11 @@ import {
   updateHabit,
 } from "@/lib/habits";
 import {
+  invalidateDashboardCache,
+  peekDashboardCache,
+  peekStaleDashboardCache,
+} from "@/lib/dashboardData";
+import {
   buildHabitDetailView,
   habitColorWithAlpha,
 } from "@/lib/habitDetailMock";
@@ -28,14 +34,8 @@ import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileNavSpacer } from "@/components/dashboard/MobileNavSpacer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
-import {
-  CreateHabitDraft,
-  CreateHabitModal,
-} from "@/components/dashboard/CreateHabitModal";
-import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
+import type { CreateHabitDraft } from "@/components/dashboard/CreateHabitModal";
 import { HabitDetailActions } from "@/components/dashboard/HabitDetailActions";
-import { CheckDayModal } from "@/components/dashboard/CheckDayModal";
-import { LogSessionModal } from "@/components/dashboard/LogSessionModal";
 import type { CheckInDraft } from "@/lib/checkIn";
 import { toDateKey } from "@/lib/checkIn";
 import {
@@ -49,6 +49,28 @@ import {
   frozenKeysForHabit,
   FreezesResponse,
 } from "@/lib/freezesApi";
+import dynamic from "next/dynamic";
+
+const CreateHabitModal = dynamic(
+  () =>
+    import("@/components/dashboard/CreateHabitModal").then((m) => m.CreateHabitModal),
+  { ssr: false },
+);
+const ConfirmDialog = dynamic(
+  () =>
+    import("@/components/dashboard/ConfirmDialog").then((m) => m.ConfirmDialog),
+  { ssr: false },
+);
+const CheckDayModal = dynamic(
+  () =>
+    import("@/components/dashboard/CheckDayModal").then((m) => m.CheckDayModal),
+  { ssr: false },
+);
+const LogSessionModal = dynamic(
+  () =>
+    import("@/components/dashboard/LogSessionModal").then((m) => m.LogSessionModal),
+  { ssr: false },
+);
 
 function StatCard({
   label,
@@ -99,10 +121,20 @@ export default function HabitDetailPage() {
   const params = useParams<{ id: string }>();
   const habitId = Number(params.id);
 
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [habit, setHabit] = useState<ApiHabit | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => getCachedUser());
+  const [habit, setHabit] = useState<ApiHabit | null>(() => {
+    const cached = peekStaleDashboardCache();
+    return cached?.habits.find((h) => h.id === habitId) ?? null;
+  });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(() => {
+    const cached = peekStaleDashboardCache();
+    const hit =
+      cached?.habits.some((h) => h.id === habitId) &&
+      cached.checkInsByHabit[habitId] != null &&
+      Boolean(getCachedUser());
+    return !hit;
+  });
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -111,32 +143,13 @@ export default function HabitDetailPage() {
   const [logOpen, setLogOpen] = useState(false);
   const [logDateKey, setLogDateKey] = useState<string | null>(null);
   const [logMode, setLogMode] = useState<"create" | "edit">("create");
-  const [checkIns, setCheckIns] = useState<ApiCheckIn[]>([]);
-  const [freezes, setFreezes] = useState<FreezesResponse | null>(null);
-
-  const loadHabit = useCallback(async (id: number) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [next, nextCheckIns, nextFreezes] = await Promise.all([
-        fetchHabit(id),
-        fetchHabitCheckIns(id),
-        fetchFreezes().catch((): FreezesResponse | null => null),
-      ]);
-      setHabit(next);
-      setCheckIns(nextCheckIns);
-      setFreezes(
-        nextFreezes ?? { remaining: 0, total: 3, by_habit: {} },
-      );
-    } catch (err) {
-      setHabit(null);
-      setCheckIns([]);
-      setError(err instanceof Error ? err.message : "Could not load habit.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [checkIns, setCheckIns] = useState<ApiCheckIn[]>(() => {
+    const cached = peekStaleDashboardCache();
+    return cached?.checkInsByHabit[habitId] ?? [];
+  });
+  const [freezes, setFreezes] = useState<FreezesResponse | null>(() => {
+    return peekStaleDashboardCache()?.freezes ?? null;
+  });
 
   useEffect(() => {
     const token = getToken();
@@ -152,17 +165,60 @@ export default function HabitDetailPage() {
       return;
     }
 
-    fetchCurrentUser(token)
-      .then((currentUser) => {
+    let cancelled = false;
+    const stale = peekStaleDashboardCache();
+    const staleHabit = stale?.habits.find((h) => h.id === habitId) ?? null;
+    const staleCheckIns = stale?.checkInsByHabit[habitId];
+    if (staleHabit && staleCheckIns != null && stale) {
+      setHabit(staleHabit);
+      setCheckIns(staleCheckIns);
+      if (stale.freezes) setFreezes(stale.freezes);
+      if (getCachedUser()) setLoading(false);
+    } else {
+      setHabit(null);
+      setCheckIns([]);
+      setLoading(true);
+    }
+
+    const fresh = peekDashboardCache();
+    const freshHabit = fresh?.habits.find((h) => h.id === habitId) ?? null;
+    const skipRemote = Boolean(
+      freshHabit &&
+        fresh?.checkInsByHabit[habitId] != null &&
+        fresh.freezes,
+    );
+
+    Promise.all([
+      fetchCurrentUser(token),
+      skipRemote
+        ? Promise.resolve(null)
+        : Promise.all([
+            fetchHabit(habitId),
+            fetchHabitCheckIns(habitId),
+            fetchFreezes().catch((): FreezesResponse | null => null),
+          ]),
+    ])
+      .then(([currentUser, remote]) => {
+        if (cancelled) return;
         setUser(currentUser);
-        return loadHabit(habitId);
+        if (remote) {
+          setHabit(remote[0]);
+          setCheckIns(remote[1]);
+          setFreezes(remote[2] ?? { remaining: 0, total: 3, by_habit: {} });
+        }
+        setLoading(false);
       })
       .catch(() => {
+        if (cancelled) return;
         clearToken();
         setError("Your session expired. Please log in again.");
         setLoading(false);
       });
-  }, [router, habitId, loadHabit]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, habitId]);
 
   const detail = useMemo(
     () =>
@@ -190,6 +246,7 @@ export default function HabitDetailPage() {
     }
 
     clearToken();
+    invalidateDashboardCache();
     router.replace("/login");
   }
 
@@ -198,6 +255,7 @@ export default function HabitDetailPage() {
 
     const updated = await updateHabit(habit.id, draftToCreatePayload(draft));
     setHabit(updated);
+    invalidateDashboardCache();
   }
 
   async function handleDeleteHabit() {
@@ -208,6 +266,7 @@ export default function HabitDetailPage() {
 
     try {
       await deleteHabit(habit.id);
+      invalidateDashboardCache();
       router.replace("/dashboard");
     } catch (err) {
       setActionError(
@@ -278,6 +337,7 @@ export default function HabitDetailPage() {
       const withoutSameDay = prev.filter((item) => item.date !== created.date);
       return [created, ...withoutSameDay];
     });
+    invalidateDashboardCache();
 
     if (created.freeze) {
       const freeze = created.freeze;
@@ -313,6 +373,7 @@ export default function HabitDetailPage() {
 
     await deleteHabitCheckIn(habit.id, existing.id);
     setCheckIns((prev) => prev.filter((item) => item.id !== existing.id));
+    invalidateDashboardCache();
   }
 
   const editingCheckIn = useMemo(() => {
@@ -331,7 +392,7 @@ export default function HabitDetailPage() {
     );
   }
 
-  if (!user || loading) {
+  if (!user || !habit) {
     return <PageLoader label="Loading habit…" />;
   }
 

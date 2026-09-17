@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LandingPage } from "@/components/landing/LandingPage";
+import { PageLoader } from "@/components/LoadingSpinner";
 
 export const metadata: Metadata = {
   title: "HabitLoop — Count habits in loops, not days",
@@ -8,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <LandingPage />;
+  return (
+    <Suspense fallback={<PageLoader label="Loading…" />}>
+      <LandingPage />
+    </Suspense>
+  );
 }

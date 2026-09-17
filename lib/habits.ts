@@ -1,5 +1,5 @@
 import { API_URL, ApiErrorBody, getToken } from "@/lib/auth";
-import { DashboardHobby, MiniHeatCell } from "@/lib/dashboardMock";
+import { DashboardHobby, MiniHeatCell } from "@/lib/dashboardTypes";
 import type { CreateHabitDraft } from "@/components/dashboard/CreateHabitModal";
 import type { ApiCheckIn } from "@/lib/checkInsApi";
 import { normalizeCheckInDate } from "@/lib/checkInsApi";

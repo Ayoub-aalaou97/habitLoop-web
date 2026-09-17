@@ -31,9 +31,8 @@ const STRIP = [
 ];
 
 /**
- * Both auth pages share this floor so they render at the same height.
- * It is a minimum, not a fixed height: content is never clipped or scrolled,
- * it just grows the card (e.g. when a validation banner appears).
+ * Shared floor so login/register feel the same height.
+ * Minimum only — content can grow (e.g. validation banner).
  */
 const CARD_HEIGHT = "sm:min-h-[620px]";
 
@@ -57,7 +56,80 @@ function BackArrowIcon() {
   );
 }
 
-export function AuthCard({ children }: { children: ReactNode }) {
+function CloseIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 6l12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function AuthCardShell({
+  children,
+  onClose,
+}: {
+  children: ReactNode;
+  onClose?: () => void;
+}) {
+  return (
+    <div
+      className={`relative flex w-full max-w-[368px] flex-col overflow-hidden rounded-3xl border border-border bg-bg-elevated shadow-[var(--shadow-card)] ${CARD_HEIGHT}`}
+    >
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-border-soft bg-bg-soft text-text-muted transition hover:border-border hover:bg-bg-muted hover:text-text"
+        >
+          <CloseIcon />
+        </button>
+      ) : null}
+
+      <div className="flex flex-1 flex-col px-6 pb-4 pt-5">{children}</div>
+
+      <div className="shrink-0 border-t border-border-soft px-6 py-2.5">
+        <div className="mb-1.5 flex gap-1">
+          {STRIP.map((color, index) => (
+            <div
+              key={`${color}-${index}`}
+              className="h-2 flex-1 rounded-[3px]"
+              style={{ background: color }}
+            />
+          ))}
+        </div>
+        <p className="text-center font-mono text-[10.5px] font-medium tracking-[0.02em] text-text-dim">
+          every square is a day you showed up
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function AuthCard({
+  children,
+  variant = "page",
+  onClose,
+}: {
+  children: ReactNode;
+  variant?: "page" | "modal";
+  onClose?: () => void;
+}) {
+  if (variant === "modal") {
+    return <AuthCardShell onClose={onClose}>{children}</AuthCardShell>;
+  }
+
   return (
     <main className="relative flex min-h-dvh items-center justify-center bg-bg p-4">
       <div className="absolute left-4 top-4 z-10 flex items-center gap-2 sm:left-6 sm:top-6">
@@ -75,26 +147,7 @@ export function AuthCard({ children }: { children: ReactNode }) {
         <ThemeToggle />
       </div>
 
-      <div
-        className={`flex w-full max-w-[368px] flex-col overflow-hidden rounded-3xl border border-border bg-bg-elevated shadow-[var(--shadow-card)] ${CARD_HEIGHT}`}
-      >
-        <div className="flex flex-1 flex-col px-6 pb-4 pt-5">{children}</div>
-
-        <div className="shrink-0 border-t border-border-soft px-6 py-2.5">
-          <div className="mb-1.5 flex gap-1">
-            {STRIP.map((color, index) => (
-              <div
-                key={`${color}-${index}`}
-                className="h-2 flex-1 rounded-[3px]"
-                style={{ background: color }}
-              />
-            ))}
-          </div>
-          <p className="text-center font-mono text-[10.5px] font-medium tracking-[0.02em] text-text-dim">
-            every square is a day you showed up
-          </p>
-        </div>
-      </div>
+      <AuthCardShell>{children}</AuthCardShell>
     </main>
   );
 }
@@ -108,14 +161,10 @@ export function AuthHeader({
 }) {
   return (
     <>
-      <Link
-        href="/"
-        className="mb-4 inline-flex items-center gap-2.5 rounded-lg outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[rgba(111,123,255,0.35)]"
-        aria-label="HabitLoop home"
-      >
+      <div className="mb-4 inline-flex items-center gap-2.5 pr-10">
         <BrandMark size={28} />
         <BrandWordmark className="text-[16px]" />
-      </Link>
+      </div>
 
       <h1 className="mb-1 text-[22px] font-extrabold leading-tight tracking-[-0.03em] text-text">
         {title}
@@ -127,11 +176,52 @@ export function AuthHeader({
   );
 }
 
-export function AuthToggle({ active }: { active: "login" | "register" }) {
+export function AuthToggle({
+  active,
+  onSwitch,
+}: {
+  active: "login" | "register";
+  /** When provided, tabs switch in-place (modal) instead of navigating. */
+  onSwitch?: (next: "login" | "register") => void;
+}) {
   const activeClass =
     "flex-1 rounded-lg bg-bg-elevated py-1.5 text-center text-[13px] font-semibold text-text-heading shadow-[0_1px_2px_rgba(15,18,26,0.08)]";
   const inactiveClass =
     "flex-1 rounded-lg py-1.5 text-center text-[13px] font-semibold text-text-muted transition hover:text-text-soft";
+
+  function InactiveTab({
+    mode,
+    label,
+  }: {
+    mode: "login" | "register";
+    label: string;
+  }) {
+    if (onSwitch) {
+      return (
+        <button
+          type="button"
+          className={inactiveClass}
+          role="tab"
+          aria-selected="false"
+          onClick={() => onSwitch(mode)}
+        >
+          {label}
+        </button>
+      );
+    }
+
+    return (
+      <Link
+        href={mode === "login" ? "/login" : "/register"}
+        className={inactiveClass}
+        role="tab"
+        aria-selected="false"
+        prefetch
+      >
+        {label}
+      </Link>
+    );
+  }
 
   return (
     <div
@@ -144,15 +234,7 @@ export function AuthToggle({ active }: { active: "login" | "register" }) {
           Log in
         </div>
       ) : (
-        <Link
-          href="/login"
-          className={inactiveClass}
-          role="tab"
-          aria-selected="false"
-          prefetch
-        >
-          Log in
-        </Link>
+        <InactiveTab mode="login" label="Log in" />
       )}
 
       {active === "register" ? (
@@ -160,15 +242,7 @@ export function AuthToggle({ active }: { active: "login" | "register" }) {
           Sign up
         </div>
       ) : (
-        <Link
-          href="/register"
-          className={inactiveClass}
-          role="tab"
-          aria-selected="false"
-          prefetch
-        >
-          Sign up
-        </Link>
+        <InactiveTab mode="register" label="Sign up" />
       )}
     </div>
   );

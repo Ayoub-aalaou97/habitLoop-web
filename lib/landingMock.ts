@@ -215,28 +215,28 @@ export const landingHabits: LandingHabitPreview[] = [
     color: "#38bdf8",
     goalLabel: "Daily",
     streak: 23,
-    mini: buildMini("#38bdf8", 0.84, 7, 14),
+    mini: buildMini("#38bdf8", 0.84, 7, 14, 16),
   },
   {
     name: "Drawing",
     color: "#a78bfa",
     goalLabel: "3× / week",
     streak: 11,
-    mini: buildMini("#a78bfa", 0.44, 42, 8),
+    mini: buildMini("#a78bfa", 0.44, 42, 8, 16),
   },
   {
     name: "Football",
     color: "#34d399",
     goalLabel: "2× / week",
     streak: 5,
-    mini: buildMini("#34d399", 0.3, 99, 4),
+    mini: buildMini("#34d399", 0.3, 99, 4, 16),
   },
   {
     name: "Travelling",
     color: "#fb923c",
     goalLabel: "2× / month",
     streak: 0,
-    mini: buildMini("#fb923c", 0.13, 123, 0),
+    mini: buildMini("#fb923c", 0.13, 123, 0, 16),
   },
 ];
 
