@@ -21,6 +21,7 @@ export type ApiHabit = {
   frequency_count: number | null;
   frequency_period_days: number | null;
   reminder_time: string | null;
+  reminder_days?: boolean[] | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;
@@ -199,17 +200,17 @@ export function apiHabitToCard(
   };
 }
 
-/** UI "8:00 PM" / "20:00" → API `H:i` */
+/** UI "8:00 PM" / "20:00" / "8:30pm" → API `H:i` */
 export function toApiReminderTime(value: string): string | null {
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(/\./g, ":").replace(/\s+/g, " ");
   if (!trimmed) return null;
 
   const twentyFour = trimmed.match(/^(\d{1,2}):(\d{2})$/);
   if (twentyFour) {
     const h = Number(twentyFour[1]);
-    const m = twentyFour[2];
-    if (h >= 0 && h <= 23) {
-      return `${String(h).padStart(2, "0")}:${m}`;
+    const m = Number(twentyFour[2]);
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     }
   }
 
@@ -217,11 +218,12 @@ export function toApiReminderTime(value: string): string | null {
   if (!twelve) return null;
 
   let h = Number(twelve[1]);
-  const m = twelve[2];
+  const m = Number(twelve[2]);
+  if (h < 1 || h > 12 || m < 0 || m > 59) return null;
   const mer = twelve[3].toUpperCase();
   if (mer === "PM" && h < 12) h += 12;
   if (mer === "AM" && h === 12) h = 0;
-  return `${String(h).padStart(2, "0")}:${m}`;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 export function draftToCreatePayload(draft: CreateHabitDraft): CreateHabitPayload {

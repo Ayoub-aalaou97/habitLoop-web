@@ -121,20 +121,10 @@ export default function HabitDetailPage() {
   const params = useParams<{ id: string }>();
   const habitId = Number(params.id);
 
-  const [user, setUser] = useState<AuthUser | null>(() => getCachedUser());
-  const [habit, setHabit] = useState<ApiHabit | null>(() => {
-    const cached = peekStaleDashboardCache();
-    return cached?.habits.find((h) => h.id === habitId) ?? null;
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [habit, setHabit] = useState<ApiHabit | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [, setLoading] = useState(() => {
-    const cached = peekStaleDashboardCache();
-    const hit =
-      cached?.habits.some((h) => h.id === habitId) &&
-      cached.checkInsByHabit[habitId] != null &&
-      Boolean(getCachedUser());
-    return !hit;
-  });
+  const [, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -143,13 +133,8 @@ export default function HabitDetailPage() {
   const [logOpen, setLogOpen] = useState(false);
   const [logDateKey, setLogDateKey] = useState<string | null>(null);
   const [logMode, setLogMode] = useState<"create" | "edit">("create");
-  const [checkIns, setCheckIns] = useState<ApiCheckIn[]>(() => {
-    const cached = peekStaleDashboardCache();
-    return cached?.checkInsByHabit[habitId] ?? [];
-  });
-  const [freezes, setFreezes] = useState<FreezesResponse | null>(() => {
-    return peekStaleDashboardCache()?.freezes ?? null;
-  });
+  const [checkIns, setCheckIns] = useState<ApiCheckIn[]>([]);
+  const [freezes, setFreezes] = useState<FreezesResponse | null>(null);
 
   useEffect(() => {
     const token = getToken();
@@ -173,7 +158,9 @@ export default function HabitDetailPage() {
       setHabit(staleHabit);
       setCheckIns(staleCheckIns);
       if (stale.freezes) setFreezes(stale.freezes);
-      if (getCachedUser()) setLoading(false);
+      const cachedUser = getCachedUser();
+      if (cachedUser) setUser(cachedUser);
+      setLoading(false);
     } else {
       setHabit(null);
       setCheckIns([]);

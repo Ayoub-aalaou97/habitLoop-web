@@ -36,6 +36,19 @@ export type ReminderGeneral = {
   freezeSuggestions: boolean;
 };
 
+export type ReminderSettings = {
+  timezone: string;
+  email_enabled: boolean;
+  push_enabled: boolean;
+  weekly_summary: boolean;
+  quiet_hours: boolean;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
+  streak_risk: boolean;
+  freeze_suggestions: boolean;
+  email: string;
+};
+
 export type ReminderUpNext = {
   name: string;
   color: string;
@@ -43,17 +56,20 @@ export type ReminderUpNext = {
   time: string;
 };
 
-const DAYS_STORAGE_KEY = "habitloop:reminder-days";
-const GENERAL_STORAGE_KEY = "habitloop:reminder-general";
-const CHANNELS_STORAGE_KEY = "habitloop:reminder-channels";
+export function detectTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
-function defaultDaysForHabit(habit: ApiHabit): boolean[] {
+export function defaultDaysForHabit(habit: ApiHabit): boolean[] {
   if (habit.frequency_type === "daily" || habit.frequency_type === "every_x_days") {
     return [true, true, true, true, true, true, true];
   }
   if (habit.frequency_type === "x_times_per_week") {
     const count = Math.max(1, Math.min(7, habit.frequency_count ?? 3));
-    // Prefer Mon/Wed/Fri pattern, then fill remaining weekdays.
     const preferred = [1, 3, 5, 2, 4, 6, 0];
     const days = [false, false, false, false, false, false, false];
     for (let i = 0; i < count; i++) {
@@ -61,24 +77,14 @@ function defaultDaysForHabit(habit: ApiHabit): boolean[] {
     }
     return days;
   }
-  // Monthly / other — default weekdays
   return [false, true, true, true, true, true, false];
 }
 
-function readDaysMap(): Record<string, boolean[]> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(DAYS_STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, boolean[]>;
-  } catch {
-    return {};
+export function daysFromHabit(habit: ApiHabit): boolean[] {
+  if (Array.isArray(habit.reminder_days) && habit.reminder_days.length === 7) {
+    return habit.reminder_days.map(Boolean);
   }
-}
-
-export function writeDaysMap(map: Record<string, boolean[]>) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(map));
+  return defaultDaysForHabit(habit);
 }
 
 export function defaultGeneral(): ReminderGeneral {
@@ -89,72 +95,46 @@ export function defaultGeneral(): ReminderGeneral {
   };
 }
 
-export function readGeneral(): ReminderGeneral {
-  if (typeof window === "undefined") return defaultGeneral();
-  try {
-    const raw = window.localStorage.getItem(GENERAL_STORAGE_KEY);
-    if (!raw) return defaultGeneral();
-    return { ...defaultGeneral(), ...(JSON.parse(raw) as ReminderGeneral) };
-  } catch {
-    return defaultGeneral();
-  }
-}
-
-export function writeGeneral(value: ReminderGeneral) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(GENERAL_STORAGE_KEY, JSON.stringify(value));
-}
-
-export function defaultChannels(emailHint = "your email"): ReminderChannel[] {
+export function defaultChannels(_emailHint = "your email"): ReminderChannel[] {
   return [
-    { id: "push", name: "Push notifications", detail: "This device", on: true },
-    { id: "email", name: "Email", detail: emailHint, on: false },
     {
-      id: "weekly",
-      name: "Weekly summary",
-      detail: "Sundays · 6:00 PM",
-      on: true,
+      id: "push",
+      name: "Browser notifications",
+      detail: "This device · works minimized",
+      on: false,
     },
   ];
 }
 
-export function readChannels(emailHint?: string): ReminderChannel[] {
-  const fallback = defaultChannels(emailHint);
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(CHANNELS_STORAGE_KEY);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as ReminderChannel[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return fallback;
-    return parsed;
-  } catch {
-    return fallback;
-  }
+export function settingsToGeneral(settings: ReminderSettings): ReminderGeneral {
+  return {
+    streakRisk: settings.streak_risk,
+    quietHours: settings.quiet_hours,
+    freezeSuggestions: settings.freeze_suggestions,
+  };
 }
 
-export function writeChannels(value: ReminderChannel[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(CHANNELS_STORAGE_KEY, JSON.stringify(value));
+export function settingsToChannels(settings: ReminderSettings): ReminderChannel[] {
+  return [
+    {
+      id: "push",
+      name: "Browser notifications",
+      detail: "This device · works minimized",
+      on: settings.push_enabled,
+    },
+  ];
 }
 
 export function buildReminderRows(habits: ApiHabit[]): ReminderRow[] {
-  const daysMap = readDaysMap();
-  return habits.map((habit) => {
-    const stored = daysMap[String(habit.id)];
-    const days =
-      Array.isArray(stored) && stored.length === 7
-        ? stored.map(Boolean)
-        : defaultDaysForHabit(habit);
-    return {
-      habitId: habit.id,
-      name: habit.name,
-      color: habit.color,
-      enabled: Boolean(habit.reminder_time),
-      time: fromApiReminderTime(habit.reminder_time),
-      days,
-      dirty: false,
-    };
-  });
+  return habits.map((habit) => ({
+    habitId: habit.id,
+    name: habit.name,
+    color: habit.color,
+    enabled: Boolean(habit.reminder_time),
+    time: fromApiReminderTime(habit.reminder_time),
+    days: daysFromHabit(habit),
+    dirty: false,
+  }));
 }
 
 export function formatDaysSubtitle(days: boolean[]): string {
@@ -177,6 +157,18 @@ export function formatDaysSubtitle(days: boolean[]): string {
   }
   if (active.length === 2 && days[0] && days[6]) return "Sat · Sun";
   return active.map((d) => d.slice(0, 3)).join(" · ");
+}
+
+export function formatQuietHoursLabel(start: string, end: string): string {
+  const toUi = (hi: string) => {
+    const [hStr, mStr] = hi.split(":");
+    let h = Number(hStr);
+    const m = Number(mStr);
+    const mer = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${String(m).padStart(2, "0")} ${mer}`;
+  };
+  return `${toUi(start)} – ${toUi(end)}`;
 }
 
 export function shiftReminderTime(time: string, minutes: number): string {
@@ -210,15 +202,79 @@ async function readApiError(res: Response): Promise<string> {
   return fieldError || data.message || `Request failed (${res.status}).`;
 }
 
+export async function fetchReminderSettings(): Promise<ReminderSettings> {
+  const res = await fetch(`${API_URL}/api/reminders/settings`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await readApiError(res));
+  return res.json();
+}
+
+export async function updateReminderSettings(
+  patch: Partial<{
+    timezone: string;
+    email_enabled: boolean;
+    push_enabled: boolean;
+    weekly_summary: boolean;
+    quiet_hours: boolean;
+    quiet_hours_start: string;
+    quiet_hours_end: string;
+    streak_risk: boolean;
+    freeze_suggestions: boolean;
+  }>,
+): Promise<ReminderSettings> {
+  const res = await fetch(`${API_URL}/api/reminders/settings`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(await readApiError(res));
+  return res.json();
+}
+
+export async function updateHabitReminder(
+  habitId: number,
+  opts: { timeUi: string | null; days: boolean[] },
+): Promise<ApiHabit> {
+  const reminder_time = opts.timeUi ? toApiReminderTime(opts.timeUi) : null;
+  const res = await fetch(`${API_URL}/api/habits/${habitId}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      reminder_time,
+      reminder_days: opts.days,
+    }),
+  });
+  if (!res.ok) throw new Error(await readApiError(res));
+  return res.json();
+}
+
+/** @deprecated use updateHabitReminder */
 export async function updateHabitReminderTime(
   habitId: number,
   timeUi: string | null,
 ): Promise<ApiHabit> {
-  const reminder_time = timeUi ? toApiReminderTime(timeUi) : null;
-  const res = await fetch(`${API_URL}/api/habits/${habitId}`, {
-    method: "PATCH",
+  return updateHabitReminder(habitId, {
+    timeUi,
+    days: [true, true, true, true, true, true, true],
+  });
+}
+
+export type TestReminderResponse = {
+  message: string;
+  habit_id: number;
+  habit_name: string;
+  email: string;
+  timezone?: string;
+};
+
+export async function sendTestReminder(
+  habitId?: number | null,
+): Promise<TestReminderResponse> {
+  const res = await fetch(`${API_URL}/api/reminders/test`, {
+    method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ reminder_time }),
+    body: JSON.stringify(habitId != null ? { habit_id: habitId } : {}),
   });
   if (!res.ok) throw new Error(await readApiError(res));
   return res.json();

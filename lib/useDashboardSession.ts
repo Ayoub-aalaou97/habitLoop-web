@@ -23,14 +23,10 @@ import {
  */
 export function useDashboardSession() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(() => getCachedUser());
-  const [bundle, setBundle] = useState<DashboardBundle | null>(() =>
-    peekStaleDashboardCache(),
-  );
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [bundle, setBundle] = useState<DashboardBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [booting, setBooting] = useState(() => {
-    return !(getCachedUser() && peekStaleDashboardCache());
-  });
+  const [booting, setBooting] = useState(true);
 
   useEffect(() => {
     const token = getToken();
@@ -40,11 +36,14 @@ export function useDashboardSession() {
     }
 
     let cancelled = false;
-    const hadPaint = Boolean(user && bundle);
+    const cachedUser = getCachedUser();
+    const cachedBundle = peekStaleDashboardCache();
+    const hadPaint = Boolean(cachedUser && cachedBundle);
 
-    if (hadPaint) {
+    if (hadPaint && cachedUser && cachedBundle) {
+      setUser(cachedUser);
+      setBundle(cachedBundle);
       setBooting(false);
-      // Background refresh — keep showing cached UI.
       Promise.all([fetchCurrentUser(token), revalidateDashboardBundle()])
         .then(([nextUser, nextBundle]) => {
           if (cancelled) return;
@@ -80,8 +79,6 @@ export function useDashboardSession() {
     return () => {
       cancelled = true;
     };
-    // Intentionally once on mount for this screen.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   return {
